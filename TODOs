@@ -1,0 +1,29 @@
+# TODOs
+- think about breaking out code into modules (or calling it done for this POC)
+- maybe make a 4th map layer for redundant floor t i
+les to fill gaps
+  - this would allow to put pieces like the pillar base as background (lower case)
+
+
+
+
+# IN PROGRESS
+
+
+
+
+# DONE
+- Setup Map level Collision detection
+  - add third set to map file with collision mappings (for collideable spaces)
+- implmenent foreground logic for uppercase tiles
+- Setup seperate collision space for combat (finer cell size?)
+  - Update: Can't do this. Instead made the main collision space finer grained
+  - Another Update: Actually ended up using a different library for this since resolv had limitations
+- Make player face mouse location (not movement direction)
+- Add a weapon (anchor to player)
+  - make weapon go behind player when turning towards dominant hand
+    - Update: decided to flip the weapon instead
+  - make a weapon move during an attach (left click)
+  - maybe some sounds effects for swords
+- drop an enemy in game
+  - make it collideable with sword
