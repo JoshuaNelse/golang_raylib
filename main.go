@@ -182,7 +182,6 @@ func (p *Player) move(dx, dy float64) {
 	p.obj.Update()
 	p.sprite.dest.X = rectFromObj(player.obj).X
 	p.sprite.dest.Y = rectFromObj(player.obj).Y
-	//p.hand = point{float32(p.obj.W) * .5, float32(p.obj.H) * .94}
 	p.weapon.move(dx, dy)
 }
 
