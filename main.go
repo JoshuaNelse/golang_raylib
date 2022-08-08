@@ -39,13 +39,16 @@ type Weapon struct {
 	reach       int
 	attackSpeed int
 	cooldown    int
+
+	idleRotation  float32
+	attackRotator func(w Weapon, p Player) float32
 }
 
 // start code for player logic
 type Player struct {
 	sprite         Sprite
 	obj            *resolv.Object
-	weapon         Weapon
+	weapon         *Weapon
 	hand           point
 	moving         bool
 	attacking      bool
@@ -82,6 +85,10 @@ var (
 	projectiles []Projectile
 
 	player Player
+
+	// TODO find a better way
+	playerSword *Weapon
+	playerBow   *Weapon
 
 	playerSpeed   float32 = 3
 	playerUp      bool
@@ -175,6 +182,7 @@ func (p *Player) move(dx, dy float64) {
 	p.obj.Update()
 	p.sprite.dest.X = rectFromObj(player.obj).X
 	p.sprite.dest.Y = rectFromObj(player.obj).Y
+	//p.hand = point{float32(p.obj.W) * .5, float32(p.obj.H) * .94}
 	p.weapon.move(dx, dy)
 }
 
@@ -225,7 +233,7 @@ func (p *Player) attack() {
 	rl.DrawCircleLines(int32(playerCenter.x), int32(playerCenter.y), 32, rl.Green)
 	angle := getPlayerToMouseAngleDegress()
 
-	// use weapon attributes in the future to determine this logic
+	// TODO use weapon attributes in the future to determine this logic
 	projectileCount := 3
 	projectileReach := p.weapon.reach
 	projectileSpread := 45 // in degrees
@@ -261,10 +269,10 @@ func (w *Weapon) move(dx, dy float64) {
 }
 
 func (w *Weapon) draw(frame int, next_frame bool, offset float32) {
-	var rotation float32 = -30
-	if player.attackFrame >= 0 {
+	rotation := w.idleRotation
+	if player.attackFrame >= 0 && w.attackRotator != nil {
+		rotation = w.attackRotator(*w, player)
 		player.attackFrame++
-		rotation = rotation * -3 / float32(w.attackSpeed) * float32(player.attackFrame)
 		if player.attackFrame >= w.attackSpeed {
 			player.attackFrame = -1 // need to find a better way to manage attack animations
 			w.move(0, 0)            // recenter weapon after attack animation
@@ -293,6 +301,16 @@ func (w *Weapon) draw(frame int, next_frame bool, offset float32) {
 
 	rl.DrawTexturePro(texture, w.sprite.src, dest,
 		origin, rotation, rl.DarkGray)
+}
+
+func (p *Player) equipWeapon(w *Weapon) {
+	// create new object from updated dest X/Y
+	w.sprite.dest.X = p.hand.x + float32(p.obj.X)
+	w.sprite.dest.Y = p.hand.y + float32(p.obj.Y)
+	w.obj = objFromRect(w.sprite.dest)
+
+	// update player weapon
+	p.weapon = w
 }
 
 func objFromRect(rect rl.Rectangle) *resolv.Object {
@@ -654,6 +672,11 @@ func input() {
 	if rl.IsMouseButtonDown(rl.MouseLeftButton) {
 		player.attacking = true
 	}
+	if rl.IsKeyPressed(rl.KeyOne) {
+		player.equipWeapon(playerSword)
+	} else if rl.IsKeyPressed(rl.KeyTwo) {
+		player.equipWeapon(playerBow)
+	}
 }
 
 /*
@@ -829,7 +852,7 @@ func initialize() {
 	player.sprite.dest.X = rectFromObj(player.obj).X
 	player.sprite.dest.Y = rectFromObj(player.obj).Y
 	player.obj.AddTags("Player")
-	weaponSprite := Sprite{
+	swordSprite := Sprite{
 		// src: rl.NewRectangle(307, 26, 10, 21), // rusty sword
 		// src: rl.NewRectangle(339, 114, 10, 29), // weapon_knight_sword
 		// src: rl.NewRectangle(310, 124, 8, 19), // cleaver
@@ -844,18 +867,46 @@ func initialize() {
 			21*1.35,
 		),
 	}
-	playerWeapon := Weapon{
-		sprite: weaponSprite,
-		obj:    objFromRect(weaponSprite.dest),
+	playerSword = &Weapon{
+		sprite: swordSprite,
+		obj:    objFromRect(swordSprite.dest),
 		// handle is the origin offset for the sprite
-		handle:      point{weaponSprite.dest.Width * .5, weaponSprite.dest.Height * .9},
-		attackSpeed: 8,
-		cooldown:    24,
-		reach:       32,
+		handle:       point{swordSprite.dest.Width * .5, swordSprite.dest.Height * .9},
+		attackSpeed:  8,
+		cooldown:     24,
+		reach:        32,
+		idleRotation: -30,
+		attackRotator: func(w Weapon, p Player) float32 {
+			return w.idleRotation * -3 / float32(w.attackSpeed) * float32(player.attackFrame)
+		},
+	}
+	bowSprite := Sprite{
+		src: rl.NewRectangle(325, 180, 7, 25), // weapon_bow 325 180 7 25
+
+		dest: rl.NewRectangle(
+			player.hand.x+float32(player.obj.X),
+			player.hand.y+float32(player.obj.Y),
+			10*1.35,
+			21*1.1,
+		),
+	}
+	playerBow = &Weapon{
+		sprite: bowSprite,
+		obj:    objFromRect(bowSprite.dest),
+		// handle is the origin offset for the sprite
+		handle:       point{bowSprite.dest.Width * .5, bowSprite.dest.Height * .75},
+		attackSpeed:  8,
+		cooldown:     24,
+		reach:        32,
+		idleRotation: 20,
+		attackRotator: func(w Weapon, p Player) float32 {
+			// TODO make it follow mouse -- for now make it 0
+			return 0
+		},
 	}
 	// TODO make method for wield - will like need to
 	// 	set player attributes like attack range from weapon attributes
-	player.weapon = playerWeapon
+	player.weapon = playerBow
 
 	// Test enemy orc_warrior_idle_anim 368 204 16 20 4
 	enemySprite := Sprite{
@@ -901,6 +952,7 @@ func quit() {
 func main() {
 	initialize()
 
+	// Each Frame
 	for running {
 		input()
 		update()

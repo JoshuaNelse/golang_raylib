@@ -8,7 +8,12 @@ les to fill gaps
 
 
 # IN PROGRESS
-
+- Implement Range
+  - switchable weapon - DONE
+    - 1 sword - DONE
+    - 2 bow - DONE
+  - implement velocity
+  - draw arrow sprite
 
 
 
