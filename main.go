@@ -33,15 +33,22 @@ type Sprite struct {
 }
 
 type Weapon struct {
-	sprite      Sprite
-	obj         *resolv.Object
-	handle      point
-	reach       int
-	attackSpeed int
-	cooldown    int
+	sprite              Sprite
+	projectileSpriteSrc Sprite
+	obj                 *resolv.Object
+	handle              point
+	reach               int
+	attackSpeed         int
+	cooldown            int
 
 	idleRotation  float32
 	attackRotator func(w Weapon, p Player) float32
+
+	projectileCount         int
+	projectilelength        int
+	projectileSpreadDegrees int
+	projectileTTLFrames     int
+	projectileVelocity      int
 }
 
 // start code for player logic
@@ -62,8 +69,8 @@ type Projectile struct {
 	ttl   int
 
 	// for something like an arrow perhaps
-	velocity   float64
-	trajectory float64
+	velocity   int
+	trajectory float64 //degrees
 	sprite     Sprite
 
 	// sender     *interface{} at somepoint this would be good to have
@@ -126,6 +133,15 @@ func degreesToRadians(d float64) float64 {
 
 func radiansToDegrees(r float64) float64 {
 	return r * (180 / math.Pi)
+}
+
+func (p *Projectile) draw() {
+	w := p.sprite.dest.Width
+	h := p.sprite.dest.Height
+	dest := rl.NewRectangle(p.start.X, p.start.Y, w, h)
+	rl.DrawTexturePro(texture, p.sprite.src, dest,
+		rl.NewVector2(dest.Width/2, dest.Height), float32(180-p.trajectory), rl.White)
+
 }
 
 func (e *Enemy) draw() {
@@ -233,29 +249,34 @@ func (p *Player) attack() {
 	angle := getPlayerToMouseAngleDegress()
 
 	// TODO use weapon attributes in the future to determine this logic
-	projectileCount := 3
-	projectileReach := p.weapon.reach
-	projectileSpread := 45 // in degrees
+	projectileCount := p.weapon.projectileCount
+	projectileReach := p.weapon.projectilelength
+	projectileSpread := p.weapon.projectileSpreadDegrees
+	projectileTTL := p.weapon.projectileTTLFrames
+	projectileVelocity := p.weapon.projectileVelocity
 	projectileSpreadItter := int(float64(angle) - math.Floor(float64(projectileCount)/2)*float64(projectileSpread))
-	projectileTTL := 10 // in frames
 
 	for i := 0; i < projectileCount; i++ {
 		x2 := int(float64(projectileReach) * math.Sin(degreesToRadians(float64(projectileSpreadItter))))
 		y2 := int(float64(projectileReach) * math.Cos(degreesToRadians(float64(projectileSpreadItter))))
+		var projectileTrajectory float64
+		if projectileVelocity > 0 {
+			projectileTrajectory = float64(projectileSpreadItter)
+		}
 		projectiles = append(projectiles,
 			Projectile{
-				start: rl.NewVector2(playerCenter.x, playerCenter.y),
-				end:   rl.NewVector2(playerCenter.x+float32(x2), playerCenter.y+float32(y2)),
-				ttl:   projectileTTL,
+				start:      rl.NewVector2(playerCenter.x, playerCenter.y),
+				end:        rl.NewVector2(playerCenter.x+float32(x2), playerCenter.y+float32(y2)),
+				ttl:        projectileTTL,
+				velocity:   projectileVelocity,
+				trajectory: projectileTrajectory,
+				sprite: Sprite{
+					src:  p.weapon.projectileSpriteSrc.src,
+					dest: p.weapon.projectileSpriteSrc.dest,
+				},
 			})
 		projectileSpreadItter += projectileSpread
 	}
-
-	// create resolv line(s)
-	// add to projectile slice
-
-	// in update method - loop over projectile slice and check for collisions
-
 	p.attacking = false
 }
 
@@ -563,6 +584,9 @@ func drawScene() {
 	for _, e := range enemies {
 		e.draw()
 	}
+	for _, p := range projectiles {
+		p.draw()
+	}
 	// draw foreground after player
 	for _, draw := range foreGround {
 		rl.DrawTexturePro(draw.texture, draw.srcRec, draw.destRec, draw.origin, draw.rotation, draw.tint)
@@ -768,12 +792,35 @@ func update() {
 		player.attack()
 	}
 
-	var nextFramProjectiles []Projectile
+	var nextFrameProjectiles []Projectile
 
 	for _, p := range projectiles {
 		if p.ttl > 0 {
-			p.ttl--
 			var collision bool
+			p.ttl--
+			if p.velocity > 0 {
+				// find delta x and y
+				var dx float32
+				var dy float32
+				switch p.trajectory {
+				case -90:
+					dx, dy = float32(-p.velocity), 0 // -x
+				case 0:
+					dx, dy = 0, float32(p.velocity) // +y
+				case 90:
+					dx, dy = float32(p.velocity), 0 // +x
+				case 180:
+					dx, dy = 0, float32(-p.velocity) // -y
+				default:
+					dx = float32(p.velocity) * float32(math.Sin(degreesToRadians(p.trajectory)))
+					dy = float32(p.velocity) * float32(math.Cos(degreesToRadians(p.trajectory)))
+				}
+				// add delta x and y to both x1,y1 and x2,y2
+				p.start.X += dx
+				p.start.Y += dy
+				p.end.X += dx
+				p.end.Y += dy
+			}
 			for _, e := range enemies {
 				for _, line := range linesFromRect(rectFromObj(e.obj)) {
 					var collisionPoint *rl.Vector2
@@ -788,13 +835,13 @@ func update() {
 				}
 			}
 			if !collision {
-				nextFramProjectiles = append(nextFramProjectiles, p)
+				nextFrameProjectiles = append(nextFrameProjectiles, p)
 			}
 		} else {
 			// If TTL not > 0 then let this projectile "fade away"
 		}
 	}
-	projectiles = nextFramProjectiles
+	projectiles = nextFrameProjectiles
 
 	var survivingEnemies []*Enemy
 	for _, e := range enemies {
@@ -836,7 +883,6 @@ func initialize() {
 
 	texture = rl.LoadTexture("resources/sprites/0x72_DungeonTilesetII_v1.4.png")
 
-	//player init new
 	playerSprite := Sprite{
 		src:  rl.NewRectangle(128, 100, 16, 28),
 		dest: rl.NewRectangle(285, 200, 32, 56),
@@ -873,11 +919,14 @@ func initialize() {
 		handle:       point{swordSprite.dest.Width * .5, swordSprite.dest.Height * .9},
 		attackSpeed:  8,
 		cooldown:     24,
-		reach:        32,
 		idleRotation: -30,
 		attackRotator: func(w Weapon, p Player) float32 {
 			return w.idleRotation * -3 / float32(w.attackSpeed) * float32(player.attackFrame)
 		},
+		projectileCount:         3,
+		projectileSpreadDegrees: 45,
+		projectilelength:        32,
+		projectileTTLFrames:     10,
 	}
 	bowSprite := Sprite{
 		src: rl.NewRectangle(325, 180, 7, 25), // weapon_bow 325 180 7 25
@@ -885,27 +934,35 @@ func initialize() {
 		dest: rl.NewRectangle(
 			player.hand.x+float32(player.obj.X),
 			player.hand.y+float32(player.obj.Y),
-			10*1.35,
-			21*1.1,
+			7*1.1,
+			25*1.1,
 		),
 	}
+	arrowSpriteSource := Sprite{
+		src:  rl.NewRectangle(308, 186, 7, 21),     // weapon_arrow 308 186 7 21
+		dest: rl.NewRectangle(0, 0, 7*1.5, 21*1.5), // only using h, w for scaling
+	}
 	playerBow = &Weapon{
-		sprite: bowSprite,
-		obj:    objFromRect(bowSprite.dest),
+		sprite:              bowSprite,
+		projectileSpriteSrc: arrowSpriteSource,
+
+		obj: objFromRect(bowSprite.dest),
 		// handle is the origin offset for the sprite
 		handle:       point{bowSprite.dest.Width * .5, bowSprite.dest.Height * .75},
 		attackSpeed:  8,
 		cooldown:     24,
-		reach:        32,
 		idleRotation: 20,
 		attackRotator: func(w Weapon, p Player) float32 {
 			// TODO make it follow mouse -- for now make it 0
 			return 0
 		},
+		projectileCount:         1,
+		projectileSpreadDegrees: 0,
+		projectilelength:        21,
+		projectileTTLFrames:     32,
+		projectileVelocity:      8,
 	}
-	// TODO make method for wield - will like need to
-	// 	set player attributes like attack range from weapon attributes
-	player.weapon = playerBow
+	player.weapon = playerSword
 
 	// Test enemy orc_warrior_idle_anim 368 204 16 20 4
 	enemySprite := Sprite{
@@ -913,6 +970,7 @@ func initialize() {
 		dest:       rl.NewRectangle(250, 250, 32, 48),
 		frameCount: 4,
 	}
+
 	enemyObj := objFromRect(enemySprite.dest)
 	enemyObj.Y += enemyObj.H * .2
 	enemyObj.H *= .7
