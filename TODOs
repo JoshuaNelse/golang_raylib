@@ -3,17 +3,13 @@
 - maybe make a 4th map layer for redundant floor t i
 les to fill gaps
   - this would allow to put pieces like the pillar base as background (lower case)
-
+- make foreground calculate by player center and not top of the sprite
+  - hoping this will reduce some of the strange issues with foreground objects 
 
 
 
 # IN PROGRESS
-- Implement Range
-  - switchable weapon - DONE
-    - 1 sword - DONE
-    - 2 bow - DONE
-  - implement velocity
-  - draw arrow sprite
+
 
 
 
@@ -32,3 +28,9 @@ les to fill gaps
   - maybe some sounds effects for swords
 - drop an enemy in game
   - make it collideable with sword
+- Implement Range
+  - switchable weapon - DONE
+    - 1 sword - DONE
+    - 2 bow - DONE
+  - implement velocity
+  - draw arrow sprite
