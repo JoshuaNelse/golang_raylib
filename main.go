@@ -40,6 +40,7 @@ type Weapon struct {
 	reach               int
 	attackSpeed         int
 	cooldown            int
+	tintColor           rl.Color
 
 	idleRotation  float32
 	attackRotator func(w Weapon, p Player) float32
@@ -94,8 +95,10 @@ var (
 	player Player
 
 	// TODO find a better way
-	playerSword *Weapon
-	playerBow   *Weapon
+	playerSword               *Weapon
+	playerBow                 *Weapon
+	playerBowThatShootSwords  *Weapon
+	playerSwordThatShootsBows *Weapon
 
 	playerSpeed   float32 = 3
 	playerUp      bool
@@ -320,7 +323,7 @@ func (w *Weapon) draw(frame int, next_frame bool, offset float32) {
 	dest.Y += offset
 
 	rl.DrawTexturePro(texture, w.sprite.src, dest,
-		origin, rotation, rl.DarkGray)
+		origin, rotation, w.tintColor)
 }
 
 func (p *Player) equipWeapon(w *Weapon) {
@@ -699,7 +702,12 @@ func input() {
 		player.equipWeapon(playerSword)
 	} else if rl.IsKeyPressed(rl.KeyTwo) {
 		player.equipWeapon(playerBow)
+	} else if rl.IsKeyPressed(rl.KeyThree) {
+		player.equipWeapon(playerBowThatShootSwords)
+	} else if rl.IsKeyPressed(rl.KeyFour) {
+		player.equipWeapon(playerSwordThatShootsBows)
 	}
+
 }
 
 /*
@@ -887,16 +895,20 @@ func initialize() {
 		src:  rl.NewRectangle(128, 100, 16, 28),
 		dest: rl.NewRectangle(285, 200, 32, 56),
 	}
+
 	playerObj := objFromRect(playerSprite.dest)
 	playerObj.H *= .6
+
 	player = Player{
 		sprite: playerSprite,
 		obj:    playerObj,
 		hand:   point{float32(playerObj.W) * .5, float32(playerObj.H) * .94},
 	}
+
 	player.sprite.dest.X = rectFromObj(player.obj).X
 	player.sprite.dest.Y = rectFromObj(player.obj).Y
 	player.obj.AddTags("Player")
+
 	swordSprite := Sprite{
 		// src: rl.NewRectangle(307, 26, 10, 21), // rusty sword
 		// src: rl.NewRectangle(339, 114, 10, 29), // weapon_knight_sword
@@ -912,6 +924,7 @@ func initialize() {
 			21*1.35,
 		),
 	}
+
 	playerSword = &Weapon{
 		sprite: swordSprite,
 		obj:    objFromRect(swordSprite.dest),
@@ -927,7 +940,9 @@ func initialize() {
 		projectileSpreadDegrees: 45,
 		projectilelength:        32,
 		projectileTTLFrames:     10,
+		tintColor:               rl.White,
 	}
+
 	bowSprite := Sprite{
 		src: rl.NewRectangle(325, 180, 7, 25), // weapon_bow 325 180 7 25
 
@@ -938,10 +953,12 @@ func initialize() {
 			25*1.1,
 		),
 	}
+
 	arrowSpriteSource := Sprite{
 		src:  rl.NewRectangle(308, 186, 7, 21),     // weapon_arrow 308 186 7 21
 		dest: rl.NewRectangle(0, 0, 7*1.5, 21*1.5), // only using h, w for scaling
 	}
+
 	playerBow = &Weapon{
 		sprite:              bowSprite,
 		projectileSpriteSrc: arrowSpriteSource,
@@ -961,7 +978,84 @@ func initialize() {
 		projectilelength:        21,
 		projectileTTLFrames:     32,
 		projectileVelocity:      8,
+		tintColor:               rl.White,
 	}
+
+	bowThatShootsSwordsSprite := Sprite{
+		src: rl.NewRectangle(325, 180, 7, 25), // weapon_bow 325 180 7 25
+
+		dest: rl.NewRectangle(
+			player.hand.x+float32(player.obj.X),
+			player.hand.y+float32(player.obj.Y),
+			7*1.1,
+			25*1.1,
+		),
+	}
+
+	swordArrowSpriteSource := Sprite{
+		src:  rl.NewRectangle(339, 114, 10, 29),     // weapon_knight_sword 339 114 10 29
+		dest: rl.NewRectangle(0, 0, 10*1.5, 29*1.5), // only using h, w for scaling
+	}
+
+	playerBowThatShootSwords = &Weapon{
+		sprite:              bowThatShootsSwordsSprite,
+		projectileSpriteSrc: swordArrowSpriteSource,
+
+		obj: objFromRect(bowSprite.dest),
+		// handle is the origin offset for the sprite
+		handle:       point{bowSprite.dest.Width * .5, bowSprite.dest.Height * .75},
+		attackSpeed:  8,
+		cooldown:     24,
+		idleRotation: 20,
+		attackRotator: func(w Weapon, p Player) float32 {
+			// TODO make it follow mouse -- for now make it 0
+			return 0
+		},
+		projectileCount:         1,
+		projectileSpreadDegrees: 0,
+		projectilelength:        21,
+		projectileTTLFrames:     32,
+		projectileVelocity:      8,
+		tintColor:               rl.Blue,
+	}
+
+	swordThatShootsBowsSprite := Sprite{
+		src: rl.NewRectangle(322, 81, 12, 30), // weapon_anime_sword 322 81 12 30
+
+		dest: rl.NewRectangle(
+			player.hand.x+float32(player.obj.X),
+			player.hand.y+float32(player.obj.Y),
+			12*1.1,
+			30*1.1,
+		),
+	}
+
+	bowArrowSpriteSource := Sprite{
+		src:  rl.NewRectangle(325, 180, 7, 25),     // weapon_bow 325 180 7 25
+		dest: rl.NewRectangle(0, 0, 7*1.5, 25*1.5), // only using h, w for scaling
+	}
+
+	playerSwordThatShootsBows = &Weapon{
+		sprite:              swordThatShootsBowsSprite,
+		projectileSpriteSrc: bowArrowSpriteSource,
+
+		obj: objFromRect(swordSprite.dest),
+		// handle is the origin offset or the sprite
+		handle:       point{swordSprite.dest.Width * .5, swordSprite.dest.Height * .99},
+		attackSpeed:  8,
+		cooldown:     24,
+		idleRotation: -30,
+		attackRotator: func(w Weapon, p Player) float32 {
+			return w.idleRotation * -3 / float32(w.attackSpeed) * float32(player.attackFrame)
+		},
+		projectileCount:         3,
+		projectileSpreadDegrees: 35,
+		projectilelength:        21,
+		projectileTTLFrames:     32,
+		projectileVelocity:      4,
+		tintColor:               rl.White,
+	}
+
 	player.weapon = playerSword
 
 	// Test enemy orc_warrior_idle_anim 368 204 16 20 4

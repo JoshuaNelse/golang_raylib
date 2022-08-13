@@ -1,10 +1,12 @@
 # TODOs
 - think about breaking out code into modules (or calling it done for this POC)
-- maybe make a 4th map layer for redundant floor t i
-les to fill gaps
+- maybe make a 4th map layer for redundant floor tiles to fill gaps
   - this would allow to put pieces like the pillar base as background (lower case)
 - make foreground calculate by player center and not top of the sprite
   - hoping this will reduce some of the strange issues with foreground objects 
+- make projectiles collide with environment
+- implement bow that shoots swords
+
 
 
 
