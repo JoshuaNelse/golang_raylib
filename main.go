@@ -6,12 +6,18 @@ import (
 	"io/ioutil"
 	"math"
 	"os"
+	testPlayer "raylib/playground/assets/player"
 	"strconv"
 	"strings"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/solarlune/resolv"
 )
+
+func test() testPlayer.Test {
+	test := testPlayer.Test{Test: "123"}
+	return test
+}
 
 type Enemy struct {
 	sprite      Sprite
@@ -427,8 +433,8 @@ type point struct {
 }
 
 /*
-	Right and Left offset have to consider each other
-	Top and Bottom offset have to consider each other
+Right and Left offset have to consider each other
+Top and Bottom offset have to consider each other
 */
 func (c collisionOffset) getTileCollisionOffset(x, y, w, h float32) (float32, float32, float32, float32) {
 	offsetW := w*c.R - (w * (1 - c.L))
@@ -628,8 +634,8 @@ func drawScene() {
 }
 
 /*
-	returns degrees mouse is from player
-	rise/run seem to be flipped because x/y are 90 degrees off in game engines
+returns degrees mouse is from player
+rise/run seem to be flipped because x/y are 90 degrees off in game engines
 */
 func getPlayerToMouseAngleDegress() float32 {
 	rise := float64(rl.GetMouseX()) - float64(rl.GetScreenWidth()/2)
@@ -711,9 +717,9 @@ func input() {
 }
 
 /*
-	Sprite image utility - if we don't have assest that face both
-	direction we can flip them programmatically
-	example: b -> d
+Sprite image utility - if we don't have assest that face both
+direction we can flip them programmatically
+example: b -> d
 */
 func flipLeft(src *rl.Rectangle) {
 	if !(src.Width < 0) {
@@ -722,9 +728,9 @@ func flipLeft(src *rl.Rectangle) {
 }
 
 /*
-	Sprite image utility - if we don't have assest that face both
-	direction we can flip them programmatically
-	example: d -> b
+Sprite image utility - if we don't have assest that face both
+direction we can flip them programmatically
+example: d -> b
 */
 func flipRight(src *rl.Rectangle) {
 	if !(src.Width > 0) {
@@ -1102,7 +1108,7 @@ func quit() {
 
 func main() {
 	initialize()
-
+	fmt.Println(test())
 	// Each Frame
 	for running {
 		input()
