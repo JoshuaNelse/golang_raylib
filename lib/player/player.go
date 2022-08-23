@@ -1,7 +1,7 @@
 package player
 
 import (
-	"raylib/playground/assets/draw2d"
+	"raylib/playground/lib/draw2d"
 )
 
 type Test struct {
