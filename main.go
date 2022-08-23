@@ -8,6 +8,7 @@ import (
 	"os"
 	"raylib/playground/lib/draw2d"
 	testPlayer "raylib/playground/lib/player"
+	"raylib/playground/lib/weapon"
 	"strconv"
 	"strings"
 
@@ -30,35 +31,14 @@ type Enemy struct {
 	dead        bool
 }
 
-type Weapon struct {
-	sprite              draw2d.Sprite
-	projectileSpriteSrc draw2d.Sprite
-	obj                 *resolv.Object
-	handle              point
-	reach               int
-	attackSpeed         int
-	cooldown            int
-	tintColor           rl.Color
-
-	idleRotation  float32
-	attackRotator func(w Weapon, p Player) float32
-
-	projectileCount         int
-	projectilelength        int
-	projectileSpreadDegrees int
-	projectileTTLFrames     int
-	projectileVelocity      int
-}
-
 // start code for player logic
 type Player struct {
 	sprite         draw2d.Sprite
 	obj            *resolv.Object
-	weapon         *Weapon
-	hand           point
+	weapon         *weapon.Weapon
+	hand           draw2d.Point
 	moving         bool
 	attacking      bool
-	attackFrame    int
 	attackCooldown int
 }
 
@@ -93,10 +73,10 @@ var (
 	player Player
 
 	// TODO find a better way
-	playerSword               *Weapon
-	playerBow                 *Weapon
-	playerBowThatShootSwords  *Weapon
-	playerSwordThatShootsBows *Weapon
+	playerSword               *weapon.Weapon
+	playerBow                 *weapon.Weapon
+	playerBowThatShootSwords  *weapon.Weapon
+	playerSwordThatShootsBows *weapon.Weapon
 
 	playerSpeed   float32 = 3
 	playerUp      bool
@@ -197,9 +177,9 @@ func (p *Player) move(dx, dy float64) {
 	p.obj.X += dx
 	p.obj.Y += dy
 	p.obj.Update()
-	p.sprite.Dest.X = rectFromObj(player.obj).X
-	p.sprite.Dest.Y = rectFromObj(player.obj).Y
-	p.weapon.move(dx, dy)
+	p.sprite.Dest.X = draw2d.RectFromObj(player.obj).X
+	p.sprite.Dest.Y = draw2d.RectFromObj(player.obj).Y
+	p.weapon.Move(dx, dy)
 }
 
 func (p *Player) draw() {
@@ -216,19 +196,20 @@ func (p *Player) draw() {
 		weaponOffset = -4
 	} else {
 		if rl.GetScreenWidth()/2 <= int(rl.GetMouseX()) {
-			flipRight(&p.sprite.Src)
+			draw2d.FlipRight(&p.sprite.Src)
 			playerFlipped = false
 		} else {
-			flipLeft(&p.sprite.Src)
+			draw2d.FlipLeft(&p.sprite.Src)
 			playerFlipped = true
 		}
 		p.sprite.Src.X = 128                                                                       // pixel where rest idle starts
 		p.sprite.Src.X += float32(p.sprite.Frame) * float32(math.Abs(float64(p.sprite.Src.Width))) // rolling the animation
 	}
+	p.weapon.SpriteFlipped = playerFlipped
 	player.moving = false
 	rl.DrawTexturePro(texture, p.sprite.Src, p.sprite.Dest, rl.NewVector2(p.sprite.Dest.Width, p.sprite.Dest.Height), 0, rl.White)
 	updateFrame := frameCount%8 == 0
-	p.weapon.draw(p.sprite.Frame, updateFrame, weaponOffset)
+	p.weapon.Draw(p.sprite.Frame, updateFrame, weaponOffset)
 }
 
 type lineDrawParam struct {
@@ -239,22 +220,22 @@ type lineDrawParam struct {
 
 func (p *Player) attack() {
 	rl.PlaySound(swordSound)
-	p.attackFrame = 0 // find a better way to trigger animation than this.
-	player.attackCooldown = p.weapon.cooldown
+	p.weapon.AttackFrame = 0 // find a better way to trigger animation than this.
+	player.attackCooldown = p.weapon.Cooldown
 
-	playerCenter := point{
-		x: float32(player.obj.X + player.obj.W/2),
-		y: float32(player.obj.Y + player.obj.H/2),
+	playerCenter := draw2d.Point{
+		X: float32(player.obj.X + player.obj.W/2),
+		Y: float32(player.obj.Y + player.obj.H/2),
 	}
-	rl.DrawCircleLines(int32(playerCenter.x), int32(playerCenter.y), 32, rl.Green)
+	rl.DrawCircleLines(int32(playerCenter.X), int32(playerCenter.Y), 32, rl.Green)
 	angle := getPlayerToMouseAngleDegress()
 
 	// TODO use weapon attributes in the future to determine this logic
-	projectileCount := p.weapon.projectileCount
-	projectileReach := p.weapon.projectilelength
-	projectileSpread := p.weapon.projectileSpreadDegrees
-	projectileTTL := p.weapon.projectileTTLFrames
-	projectileVelocity := p.weapon.projectileVelocity
+	projectileCount := p.weapon.ProjectileCount
+	projectileReach := p.weapon.Projectilelength
+	projectileSpread := p.weapon.ProjectileSpreadDegrees
+	projectileTTL := p.weapon.ProjectileTTLFrames
+	projectileVelocity := p.weapon.ProjectileVelocity
 	projectileSpreadItter := int(float64(angle) - math.Floor(float64(projectileCount)/2)*float64(projectileSpread))
 
 	for i := 0; i < projectileCount; i++ {
@@ -266,14 +247,14 @@ func (p *Player) attack() {
 		}
 		projectiles = append(projectiles,
 			Projectile{
-				start:      rl.NewVector2(playerCenter.x, playerCenter.y),
-				end:        rl.NewVector2(playerCenter.x+float32(x2), playerCenter.y+float32(y2)),
+				start:      rl.NewVector2(playerCenter.X, playerCenter.Y),
+				end:        rl.NewVector2(playerCenter.X+float32(x2), playerCenter.Y+float32(y2)),
 				ttl:        projectileTTL,
 				velocity:   projectileVelocity,
 				trajectory: projectileTrajectory,
 				sprite: draw2d.Sprite{
-					Src:  p.weapon.projectileSpriteSrc.Src,
-					Dest: p.weapon.projectileSpriteSrc.Dest,
+					Src:  p.weapon.ProjectileSpriteSrc.Src,
+					Dest: p.weapon.ProjectileSpriteSrc.Dest,
 				},
 			})
 		projectileSpreadItter += projectileSpread
@@ -281,69 +262,14 @@ func (p *Player) attack() {
 	p.attacking = false
 }
 
-func (w *Weapon) move(dx, dy float64) {
-	w.obj.X += dx
-	w.obj.Y += dy
-	w.obj.Update()
-	w.sprite.Dest.X = rectFromObj(w.obj).X
-	w.sprite.Dest.Y = rectFromObj(w.obj).Y
-}
-
-func (w *Weapon) draw(frame int, next_frame bool, offset float32) {
-	rotation := w.idleRotation
-	if player.attackFrame >= 0 && w.attackRotator != nil {
-		rotation = w.attackRotator(*w, player)
-		player.attackFrame++
-		if player.attackFrame >= w.attackSpeed {
-			player.attackFrame = -1 // need to find a better way to manage attack animations
-			w.move(0, 0)            // recenter weapon after attack animation
-		}
-
-	} else if next_frame {
-
-		if frame == 0 || frame == 1 {
-			w.sprite.Dest.Y += 1
-		} else {
-			w.sprite.Dest.Y -= 1
-		}
-	}
-
-	if !playerFlipped {
-		flipRight(&w.sprite.Src)
-	}
-	if playerFlipped {
-		flipLeft(&w.sprite.Src)
-		rotation *= -1
-	}
-
-	origin := rl.NewVector2(w.handle.x, w.handle.y)
-	dest := w.sprite.Dest
-	dest.Y += offset
-
-	rl.DrawTexturePro(texture, w.sprite.Src, dest,
-		origin, rotation, w.tintColor)
-}
-
-func (p *Player) equipWeapon(w *Weapon) {
+func (p *Player) equipWeapon(w *weapon.Weapon) {
 	// create new object from updated dest X/Y
-	w.sprite.Dest.X = p.hand.x + float32(p.obj.X)
-	w.sprite.Dest.Y = p.hand.y + float32(p.obj.Y)
-	w.obj = objFromRect(w.sprite.Dest)
+	w.Sprite.Dest.X = p.hand.X + float32(p.obj.X)
+	w.Sprite.Dest.Y = p.hand.Y + float32(p.obj.Y)
+	w.Obj = draw2d.ObjFromRect(w.Sprite.Dest)
 
 	// update player weapon
 	p.weapon = w
-}
-
-func objFromRect(rect rl.Rectangle) *resolv.Object {
-	x, y, w, h := float64(rect.X), float64(rect.Y), float64(rect.Width), float64(rect.Height)
-	// Janky fix: x = x-w and y = y-h to resolve difference in rl & resolv packages
-	return resolv.NewObject(x-w, y-h, w, h)
-}
-
-func rectFromObj(obj *resolv.Object) rl.Rectangle {
-	x, y, w, h := float32(obj.X), float32(obj.Y), float32(obj.W), float32(obj.H)
-	// Janky fix: x = x+w and y = y+h to resolve difference in rl & resolv packages
-	return rl.NewRectangle(x+w, y+h, w, h)
 }
 
 func getCameraTarget() rl.Vector2 {
@@ -419,11 +345,6 @@ func loadMap(mapFile string) {
 	worldCollisionSpace.Add(objects...)
 }
 
-type point struct {
-	x float32
-	y float32
-}
-
 /*
 Right and Left offset have to consider each other
 Top and Bottom offset have to consider each other
@@ -445,7 +366,7 @@ type collisionOffset struct {
 }
 
 var (
-	tileMapIndex = map[string]map[int]point{
+	tileMapIndex = map[string]map[int]draw2d.Point{
 		"_": emptyTileMap,
 		"f": floorTileMap,
 		"w": wallTileMap,
@@ -456,64 +377,64 @@ var (
 		".": {0, 0, 0, 0}, // probably more efficient to just skip writting a collision here
 		"d": {L: .8, R: .8, T: .3, B: 1},
 	}
-	emptyTileMap = map[int]point{
-		0: {0, 0},
+	emptyTileMap = map[int]draw2d.Point{
+		0: {X: 0, Y: 0},
 	}
-	floorTileMap = map[int]point{
-		1: {16, 64}, // plain floor
-		2: {32, 64}, // really cracked floor
-		3: {48, 64}, // kinda cracked floor
-		4: {16, 80}, // big hole
-		5: {32, 80}, // somewhat cracked floor
-		6: {48, 80}, // bottomr right hole
-		7: {16, 96}, // top right hole
-		8: {32, 96}, // top left whole
-		9: {48, 96}, // ladder
+	floorTileMap = map[int]draw2d.Point{
+		1: {X: 16, Y: 64}, // plain floor
+		2: {X: 32, Y: 64}, // really cracked floor
+		3: {X: 48, Y: 64}, // kinda cracked floor
+		4: {X: 16, Y: 80}, // big hole
+		5: {X: 32, Y: 80}, // somewhat cracked floor
+		6: {X: 48, Y: 80}, // bottomr right hole
+		7: {X: 16, Y: 96}, // top right hole
+		8: {X: 32, Y: 96}, // top left whole
+		9: {X: 48, Y: 96}, // ladder
 	}
-	wallTileMap = map[int]point{
-		1:  {16, 0},   // top left
-		2:  {32, 0},   // top mid
-		3:  {48, 0},   // top right
-		4:  {16, 16},  // left
-		5:  {32, 16},  // mid
-		6:  {48, 16},  // right
-		7:  {0, 112},  // wall_side_top_left 0 112 16 16
-		8:  {16, 112}, // wall_side_top_right 16 112 16 16
-		9:  {0, 128},  // wall_side_mid_left 0 128 16 16
-		10: {16, 128}, // wall_side_mid_right 16 128 16 16
-		11: {0, 144},  // wall_side_front_left 0 144 16 16
-		12: {16, 144}, // wall_side_front_right 16 144 16 16
-		13: {32, 112}, // wall_corner_top_left 32 112 16 16
-		14: {48, 112}, // wall_corner_top_right 48 112 16 16
-		15: {32, 128}, // wall_corner_left 32 128 16 16
-		16: {48, 128}, // wall_corner_right 48 128 16 16
-		17: {32, 144}, // wall_corner_bottom_left 32 144 16 16
-		18: {48, 144}, // wall_corner_bottom_right 48 144 16 16
-		19: {32, 160}, // wall_corner_front_left 32 160 16 16
-		20: {48, 160}, // wall_corner_front_right 48 160 16 16
-		21: {80, 128}, // wall_inner_corner_l_top_left 80 128 16 16
-		22: {64, 128}, // wall_inner_corner_l_top_rigth 64 128 16 16
-		23: {80, 144}, // wall_inner_corner_mid_left 80 144 16 16
-		24: {64, 144}, // wall_inner_corner_mid_rigth 64 144 16 16
-		25: {80, 160}, // wall_inner_corner_t_top_left 80 160 16 16
-		26: {64, 160}, // wall_inner_corner_t_top_rigth 64 160 16 16
+	wallTileMap = map[int]draw2d.Point{
+		1:  {X: 16, Y: 0},   // top left
+		2:  {X: 32, Y: 0},   // top mid
+		3:  {X: 48, Y: 0},   // top right
+		4:  {X: 16, Y: 16},  // left
+		5:  {X: 32, Y: 16},  // mid
+		6:  {X: 48, Y: 16},  // right
+		7:  {X: 0, Y: 112},  // wall_side_top_left 0 112 16 16
+		8:  {X: 16, Y: 112}, // wall_side_top_right 16 112 16 16
+		9:  {X: 0, Y: 128},  // wall_side_mid_left 0 128 16 16
+		10: {X: 16, Y: 128}, // wall_side_mid_right 16 128 16 16
+		11: {X: 0, Y: 144},  // wall_side_front_left 0 144 16 16
+		12: {X: 16, Y: 144}, // wall_side_front_right 16 144 16 16
+		13: {X: 32, Y: 112}, // wall_corner_top_left 32 112 16 16
+		14: {X: 48, Y: 112}, // wall_corner_top_right 48 112 16 16
+		15: {X: 32, Y: 128}, // wall_corner_left 32 128 16 16
+		16: {X: 48, Y: 128}, // wall_corner_right 48 128 16 16
+		17: {X: 32, Y: 144}, // wall_corner_bottom_left 32 144 16 16
+		18: {X: 48, Y: 144}, // wall_corner_bottom_right 48 144 16 16
+		19: {X: 32, Y: 160}, // wall_corner_front_left 32 160 16 16
+		20: {X: 48, Y: 160}, // wall_corner_front_right 48 160 16 16
+		21: {X: 80, Y: 128}, // wall_inner_corner_l_top_left 80 128 16 16
+		22: {X: 64, Y: 128}, // wall_inner_corner_l_top_rigth 64 128 16 16
+		23: {X: 80, Y: 144}, // wall_inner_corner_mid_left 80 144 16 16
+		24: {X: 64, Y: 144}, // wall_inner_corner_mid_rigth 64 144 16 16
+		25: {X: 80, Y: 160}, // wall_inner_corner_t_top_left 80 160 16 16
+		26: {X: 64, Y: 160}, // wall_inner_corner_t_top_rigth 64 160 16 16
 	}
-	decorTileMap = map[int]point{
-		1:  {64, 0},   // wall_fountain_top 64 0 16 16
-		2:  {64, 16},  // wall_fountain_mid_red_anim 64 16 16 16 3
-		3:  {64, 32},  // wall_fountain_basin_red_anim 64 32 16 16 3
-		4:  {64, 48},  // wall_fountain_mid_blue_anim 64 48 16 16 3
-		5:  {64, 64},  // wall_fountain_basin_blue_anim 64 64 16 16 3
-		6:  {16, 32},  // wall_banner_red 16 32 16 16
-		7:  {32, 32},  // wall_banner_blue 32 32 16 16
-		8:  {16, 48},  // wall_banner_green 16 48 16 16
-		9:  {32, 48},  // wall_banner_yellow 32 48 16 16
-		10: {96, 80},  // wall_column_top 96 80 16 16
-		11: {96, 96},  // wall_column_mid 96 96 16 16
-		12: {96, 112}, // wall_coulmn_base 96 112 16 16
-		13: {80, 80},  // column_top 80 80 16 16
-		14: {80, 96},  // column_mid 80 96 16 16
-		15: {80, 112}, // coulmn_base 80 112 16 16
+	decorTileMap = map[int]draw2d.Point{
+		1:  {X: 64, Y: 0},   // wall_fountain_top 64 0 16 16
+		2:  {X: 64, Y: 16},  // wall_fountain_mid_red_anim 64 16 16 16 3
+		3:  {X: 64, Y: 32},  // wall_fountain_basin_red_anim 64 32 16 16 3
+		4:  {X: 64, Y: 48},  // wall_fountain_mid_blue_anim 64 48 16 16 3
+		5:  {X: 64, Y: 64},  // wall_fountain_basin_blue_anim 64 64 16 16 3
+		6:  {X: 16, Y: 32},  // wall_banner_red 16 32 16 16
+		7:  {X: 32, Y: 32},  // wall_banner_blue 32 32 16 16
+		8:  {X: 16, Y: 48},  // wall_banner_green 16 48 16 16
+		9:  {X: 32, Y: 48},  // wall_banner_yellow 32 48 16 16
+		10: {X: 96, Y: 80},  // wall_column_top 96 80 16 16
+		11: {X: 96, Y: 96},  // wall_column_mid 96 96 16 16
+		12: {X: 96, Y: 112}, // wall_coulmn_base 96 112 16 16
+		13: {X: 80, Y: 80},  // column_top 80 80 16 16
+		14: {X: 80, Y: 96},  // column_mid 80 96 16 16
+		15: {X: 80, Y: 112}, // coulmn_base 80 112 16 16
 	}
 )
 
@@ -536,8 +457,8 @@ func drawMapBackground() []drawParams {
 		tileDest.X = tileDest.Width * float32(i%mapW) // 6 % 5 means x column 1
 		tileDest.Y = tileDest.Width * float32(i/mapW) // 6 % 5 means y row of 1
 		tileMap := tileMapIndex[strings.ToLower(srcMap[i])]
-		tileSrc.X = tileMap[tileInt].x
-		tileSrc.Y = tileMap[tileInt].y
+		tileSrc.X = tileMap[tileInt].X
+		tileSrc.Y = tileMap[tileInt].Y
 
 		if strings.ToUpper(srcMap[i]) == srcMap[i] {
 			// TODO make this fill square more sofistacted - maybe random or something
@@ -596,7 +517,7 @@ func drawScene() {
 	// draw debug collision objects
 	if debugMode {
 		for _, o := range collisionMapDebug {
-			mo := objFromRect(o)
+			mo := draw2d.ObjFromRect(o)
 			rl.DrawRectangleLines(int32(mo.X), int32(mo.Y), int32(mo.W), int32(mo.H), rl.White)
 		}
 
@@ -613,14 +534,14 @@ func drawScene() {
 
 		}
 
-		playerCenter := point{
-			x: float32(player.obj.X + player.obj.W/2),
-			y: float32(player.obj.Y + player.obj.H/2),
+		playerCenter := draw2d.Point{
+			X: float32(player.obj.X + player.obj.W/2),
+			Y: float32(player.obj.Y + player.obj.H/2),
 		}
-		rl.DrawCircleLines(int32(playerCenter.x), int32(playerCenter.y), 32, rl.Green)
+		rl.DrawCircleLines(int32(playerCenter.X), int32(playerCenter.Y), 32, rl.Green)
 		angle := getPlayerToMouseAngleDegress()
-		rl.DrawCircleSectorLines(rl.NewVector2(playerCenter.x, playerCenter.y), 32, angle, angle-45, 5, rl.White)
-		rl.DrawCircleSectorLines(rl.NewVector2(playerCenter.x, playerCenter.y), 32, angle, angle+45, 5, rl.White)
+		rl.DrawCircleSectorLines(rl.NewVector2(playerCenter.X, playerCenter.Y), 32, angle, angle-45, 5, rl.White)
+		rl.DrawCircleSectorLines(rl.NewVector2(playerCenter.X, playerCenter.Y), 32, angle, angle+45, 5, rl.White)
 	}
 
 }
@@ -708,29 +629,6 @@ func input() {
 
 }
 
-/*
-Sprite image utility - if we don't have assest that face both
-direction we can flip them programmatically
-example: b -> d
-*/
-func flipLeft(src *rl.Rectangle) {
-	if !(src.Width < 0) {
-		src.Width *= -1
-	}
-}
-
-/*
-Sprite image utility - if we don't have assest that face both
-direction we can flip them programmatically
-example: d -> b
-*/
-func flipRight(src *rl.Rectangle) {
-	if !(src.Width > 0) {
-		src.Width *= -1
-	}
-
-}
-
 type Line struct {
 	start rl.Vector2
 	end   rl.Vector2
@@ -763,12 +661,12 @@ func update() {
 			dy += float64(playerSpeed)
 		}
 		if playerRight {
-			flipRight(&player.sprite.Src)
+			draw2d.FlipRight(&player.sprite.Src)
 			dx += float64(playerSpeed)
 			playerFlipped = false
 		}
 		if playerLeft {
-			flipLeft(&player.sprite.Src)
+			draw2d.FlipLeft(&player.sprite.Src)
 			dx -= float64(playerSpeed)
 			playerFlipped = true
 		}
@@ -828,7 +726,7 @@ func update() {
 				p.end.Y += dy
 			}
 			for _, e := range enemies {
-				for _, line := range linesFromRect(rectFromObj(e.obj)) {
+				for _, line := range linesFromRect(draw2d.RectFromObj(e.obj)) {
 					var collisionPoint *rl.Vector2
 					collision = rl.CheckCollisionLines(p.start, p.end, line.start, line.end, collisionPoint)
 					if collision {
@@ -887,24 +785,24 @@ func initialize() {
 	rl.SetExitKey(0)
 	rl.SetTargetFPS(60)
 
-	texture = rl.LoadTexture("resources/sprites/0x72_DungeonTilesetII_v1.4.png")
+	texture = draw2d.InitTexture()
 
 	playerSprite := draw2d.Sprite{
 		Src:  rl.NewRectangle(128, 100, 16, 28),
 		Dest: rl.NewRectangle(285, 200, 32, 56),
 	}
 
-	playerObj := objFromRect(playerSprite.Dest)
+	playerObj := draw2d.ObjFromRect(playerSprite.Dest)
 	playerObj.H *= .6
 
 	player = Player{
 		sprite: playerSprite,
 		obj:    playerObj,
-		hand:   point{float32(playerObj.W) * .5, float32(playerObj.H) * .94},
+		hand:   draw2d.Point{X: float32(playerObj.W) * .5, Y: float32(playerObj.H) * .94},
 	}
 
-	player.sprite.Dest.X = rectFromObj(player.obj).X
-	player.sprite.Dest.Y = rectFromObj(player.obj).Y
+	player.sprite.Dest.X = draw2d.RectFromObj(player.obj).X
+	player.sprite.Dest.Y = draw2d.RectFromObj(player.obj).Y
 	player.obj.AddTags("Player")
 
 	swordSprite := draw2d.Sprite{
@@ -916,37 +814,37 @@ func initialize() {
 		Src: rl.NewRectangle(339, 26, 10, 21), // weapon_red_gem_sword
 
 		Dest: rl.NewRectangle(
-			player.hand.x+float32(player.obj.X),
-			player.hand.y+float32(player.obj.Y),
+			player.hand.X+float32(player.obj.X),
+			player.hand.Y+float32(player.obj.Y),
 			10*1.35,
 			21*1.35,
 		),
 	}
 
-	playerSword = &Weapon{
-		sprite: swordSprite,
-		obj:    objFromRect(swordSprite.Dest),
+	playerSword = &weapon.Weapon{
+		Sprite: swordSprite,
+		Obj:    draw2d.ObjFromRect(swordSprite.Dest),
 		// handle is the origin offset for the sprite
-		handle:       point{swordSprite.Dest.Width * .5, swordSprite.Dest.Height * .9},
-		attackSpeed:  8,
-		cooldown:     24,
-		idleRotation: -30,
-		attackRotator: func(w Weapon, p Player) float32 {
-			return w.idleRotation * -3 / float32(w.attackSpeed) * float32(player.attackFrame)
+		Handle:       draw2d.Point{X: swordSprite.Dest.Width * .5, Y: swordSprite.Dest.Height * .9},
+		AttackSpeed:  8,
+		Cooldown:     24,
+		IdleRotation: -30,
+		AttackRotator: func(w weapon.Weapon) float32 {
+			return w.IdleRotation * -3 / float32(w.AttackSpeed) * float32(w.AttackFrame)
 		},
-		projectileCount:         3,
-		projectileSpreadDegrees: 45,
-		projectilelength:        32,
-		projectileTTLFrames:     10,
-		tintColor:               rl.White,
+		ProjectileCount:         3,
+		ProjectileSpreadDegrees: 45,
+		Projectilelength:        32,
+		ProjectileTTLFrames:     10,
+		TintColor:               rl.White,
 	}
 
 	bowSprite := draw2d.Sprite{
 		Src: rl.NewRectangle(325, 180, 7, 25), // weapon_bow 325 180 7 25
 
 		Dest: rl.NewRectangle(
-			player.hand.x+float32(player.obj.X),
-			player.hand.y+float32(player.obj.Y),
+			player.hand.X+float32(player.obj.X),
+			player.hand.Y+float32(player.obj.Y),
 			7*1.1,
 			25*1.1,
 		),
@@ -957,34 +855,34 @@ func initialize() {
 		Dest: rl.NewRectangle(0, 0, 7*1.5, 21*1.5), // only using h, w for scaling
 	}
 
-	playerBow = &Weapon{
-		sprite:              bowSprite,
-		projectileSpriteSrc: arrowSpriteSource,
+	playerBow = &weapon.Weapon{
+		Sprite:              bowSprite,
+		ProjectileSpriteSrc: arrowSpriteSource,
 
-		obj: objFromRect(bowSprite.Dest),
+		Obj: draw2d.ObjFromRect(bowSprite.Dest),
 		// handle is the origin offset for the sprite
-		handle:       point{bowSprite.Dest.Width * .5, bowSprite.Dest.Height * .75},
-		attackSpeed:  8,
-		cooldown:     24,
-		idleRotation: 20,
-		attackRotator: func(w Weapon, p Player) float32 {
+		Handle:       draw2d.Point{X: bowSprite.Dest.Width * .5, Y: bowSprite.Dest.Height * .75},
+		AttackSpeed:  8,
+		Cooldown:     24,
+		IdleRotation: 20,
+		AttackRotator: func(w weapon.Weapon) float32 {
 			// TODO make it follow mouse -- for now make it 0
 			return 0
 		},
-		projectileCount:         1,
-		projectileSpreadDegrees: 0,
-		projectilelength:        21,
-		projectileTTLFrames:     32,
-		projectileVelocity:      8,
-		tintColor:               rl.White,
+		ProjectileCount:         1,
+		ProjectileSpreadDegrees: 0,
+		Projectilelength:        21,
+		ProjectileTTLFrames:     32,
+		ProjectileVelocity:      8,
+		TintColor:               rl.White,
 	}
 
 	bowThatShootsSwordsSprite := draw2d.Sprite{
 		Src: rl.NewRectangle(325, 180, 7, 25), // weapon_bow 325 180 7 25
 
 		Dest: rl.NewRectangle(
-			player.hand.x+float32(player.obj.X),
-			player.hand.y+float32(player.obj.Y),
+			player.hand.X+float32(player.obj.X),
+			player.hand.Y+float32(player.obj.Y),
 			7*1.1,
 			25*1.1,
 		),
@@ -995,34 +893,34 @@ func initialize() {
 		Dest: rl.NewRectangle(0, 0, 10*1.5, 29*1.5), // only using h, w for scaling
 	}
 
-	playerBowThatShootSwords = &Weapon{
-		sprite:              bowThatShootsSwordsSprite,
-		projectileSpriteSrc: swordArrowSpriteSource,
+	playerBowThatShootSwords = &weapon.Weapon{
+		Sprite:              bowThatShootsSwordsSprite,
+		ProjectileSpriteSrc: swordArrowSpriteSource,
 
-		obj: objFromRect(bowSprite.Dest),
+		Obj: draw2d.ObjFromRect(bowSprite.Dest),
 		// handle is the origin offset for the sprite
-		handle:       point{bowSprite.Dest.Width * .5, bowSprite.Dest.Height * .75},
-		attackSpeed:  8,
-		cooldown:     24,
-		idleRotation: 20,
-		attackRotator: func(w Weapon, p Player) float32 {
+		Handle:       draw2d.Point{X: bowSprite.Dest.Width * .5, Y: bowSprite.Dest.Height * .75},
+		AttackSpeed:  8,
+		Cooldown:     24,
+		IdleRotation: 20,
+		AttackRotator: func(w weapon.Weapon) float32 {
 			// TODO make it follow mouse -- for now make it 0
 			return 0
 		},
-		projectileCount:         1,
-		projectileSpreadDegrees: 0,
-		projectilelength:        21,
-		projectileTTLFrames:     32,
-		projectileVelocity:      8,
-		tintColor:               rl.Blue,
+		ProjectileCount:         1,
+		ProjectileSpreadDegrees: 0,
+		Projectilelength:        21,
+		ProjectileTTLFrames:     32,
+		ProjectileVelocity:      8,
+		TintColor:               rl.Blue,
 	}
 
 	swordThatShootsBowsSprite := draw2d.Sprite{
 		Src: rl.NewRectangle(322, 81, 12, 30), // weapon_anime_sword 322 81 12 30
 
 		Dest: rl.NewRectangle(
-			player.hand.x+float32(player.obj.X),
-			player.hand.y+float32(player.obj.Y),
+			player.hand.X+float32(player.obj.X),
+			player.hand.Y+float32(player.obj.Y),
 			12*1.1,
 			30*1.1,
 		),
@@ -1033,25 +931,25 @@ func initialize() {
 		Dest: rl.NewRectangle(0, 0, 7*1.5, 25*1.5), // only using h, w for scaling
 	}
 
-	playerSwordThatShootsBows = &Weapon{
-		sprite:              swordThatShootsBowsSprite,
-		projectileSpriteSrc: bowArrowSpriteSource,
+	playerSwordThatShootsBows = &weapon.Weapon{
+		Sprite:              swordThatShootsBowsSprite,
+		ProjectileSpriteSrc: bowArrowSpriteSource,
 
-		obj: objFromRect(swordSprite.Dest),
+		Obj: draw2d.ObjFromRect(swordSprite.Dest),
 		// handle is the origin offset or the sprite
-		handle:       point{swordSprite.Dest.Width * .5, swordSprite.Dest.Height * .99},
-		attackSpeed:  8,
-		cooldown:     24,
-		idleRotation: -30,
-		attackRotator: func(w Weapon, p Player) float32 {
-			return w.idleRotation * -3 / float32(w.attackSpeed) * float32(player.attackFrame)
+		Handle:       draw2d.Point{X: swordSprite.Dest.Width * .5, Y: swordSprite.Dest.Height * .99},
+		AttackSpeed:  8,
+		Cooldown:     24,
+		IdleRotation: -30,
+		AttackRotator: func(w weapon.Weapon) float32 {
+			return w.IdleRotation * -3 / float32(w.AttackSpeed) * float32(w.AttackFrame)
 		},
-		projectileCount:         3,
-		projectileSpreadDegrees: 35,
-		projectilelength:        21,
-		projectileTTLFrames:     32,
-		projectileVelocity:      4,
-		tintColor:               rl.White,
+		ProjectileCount:         3,
+		ProjectileSpreadDegrees: 35,
+		Projectilelength:        21,
+		ProjectileTTLFrames:     32,
+		ProjectileVelocity:      4,
+		TintColor:               rl.White,
 	}
 
 	player.weapon = playerSword
@@ -1063,7 +961,7 @@ func initialize() {
 		FrameCount: 4,
 	}
 
-	enemyObj := objFromRect(enemySprite.Dest)
+	enemyObj := draw2d.ObjFromRect(enemySprite.Dest)
 	enemyObj.Y += enemyObj.H * .2
 	enemyObj.H *= .7
 	enemyObj.X += enemyObj.W * .2
@@ -1092,7 +990,7 @@ func initialize() {
 }
 
 func quit() {
-	rl.UnloadTexture(texture)
+	draw2d.UnloadTexture()
 	rl.UnloadMusicStream(music)
 	rl.UnloadSound(swordSound)
 	rl.CloseWindow()
