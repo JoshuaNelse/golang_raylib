@@ -1,9 +1,33 @@
-package draw2d
+package util
 
 import (
+	"math"
+
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/solarlune/resolv"
 )
+
+/*
+returns degrees mouse is from player
+rise/run seem to be flipped because x/y are 90 degrees off in game engines
+*/
+func GetPlayerToMouseAngleDegress() float32 {
+	rise := float64(rl.GetMouseX()) - float64(rl.GetScreenWidth()/2)
+	run := float64(rl.GetMouseY()) - float64(rl.GetScreenHeight()/2)
+	angle := float32(RadiansToDegrees(math.Atan(rise / run)))
+	if run < 0 {
+		angle += 180
+	}
+	return angle
+}
+
+func DegreesToRadians(d float64) float64 {
+	return d * (math.Pi / 180)
+}
+
+func RadiansToDegrees(r float64) float64 {
+	return r * (180 / math.Pi)
+}
 
 func ObjFromRect(rect rl.Rectangle) *resolv.Object {
 	x, y, w, h := float64(rect.X), float64(rect.Y), float64(rect.Width), float64(rect.Height)
@@ -38,9 +62,4 @@ func FlipRight(src *rl.Rectangle) {
 		src.Width *= -1
 	}
 
-}
-
-type Point struct {
-	X float32
-	Y float32
 }

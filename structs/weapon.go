@@ -1,18 +1,19 @@
-package weapon
+package structs
 
 import (
-	"raylib/playground/lib/draw2d"
+	util "raylib/playground/game/utils"
+	"raylib/playground/structs/draw2d"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/solarlune/resolv"
 )
 
 type Weapon struct {
-	Sprite              draw2d.Sprite
+	Sprite              Sprite
 	SpriteFlipped       bool
-	ProjectileSpriteSrc draw2d.Sprite
+	ProjectileSpriteSrc Sprite
 	Obj                 *resolv.Object
-	Handle              draw2d.Point
+	Handle              Point
 	Reach               int
 	AttackSpeed         int
 	Cooldown            int
@@ -33,8 +34,8 @@ func (w *Weapon) Move(dx, dy float64) {
 	w.Obj.X += dx
 	w.Obj.Y += dy
 	w.Obj.Update()
-	w.Sprite.Dest.X = draw2d.RectFromObj(w.Obj).X
-	w.Sprite.Dest.Y = draw2d.RectFromObj(w.Obj).Y
+	w.Sprite.Dest.X = util.RectFromObj(w.Obj).X
+	w.Sprite.Dest.Y = util.RectFromObj(w.Obj).Y
 }
 
 func (w *Weapon) Draw(frame int, next_frame bool, offset float32) {
@@ -57,10 +58,10 @@ func (w *Weapon) Draw(frame int, next_frame bool, offset float32) {
 	}
 
 	if !w.SpriteFlipped {
-		draw2d.FlipRight(&w.Sprite.Src)
+		util.FlipRight(&w.Sprite.Src)
 	}
 	if w.SpriteFlipped {
-		draw2d.FlipLeft(&w.Sprite.Src)
+		util.FlipLeft(&w.Sprite.Src)
 		rotation *= -1
 	}
 

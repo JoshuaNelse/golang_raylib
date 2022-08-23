@@ -1,4 +1,4 @@
-package draw2d
+package structs
 
 import rl "github.com/gen2brain/raylib-go/raylib"
 

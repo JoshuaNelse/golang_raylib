@@ -6,54 +6,20 @@ import (
 	"io/ioutil"
 	"math"
 	"os"
-	"raylib/playground/lib/draw2d"
-	testPlayer "raylib/playground/lib/player"
-	"raylib/playground/lib/weapon"
+	collisionengine "raylib/playground/engines/collision-engine"
+	projectileengine "raylib/playground/engines/projectile-engine"
+	soundengine "raylib/playground/engines/sound-engine"
+	"raylib/playground/game"
+	util "raylib/playground/game/utils"
+	"raylib/playground/structs"
+	"raylib/playground/structs/draw2d"
 	"strconv"
+
 	"strings"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/solarlune/resolv"
 )
-
-func test() testPlayer.Test {
-	test := testPlayer.Test{Test: "123"}
-	return test
-}
-
-type Enemy struct {
-	sprite      draw2d.Sprite
-	obj         *resolv.Object
-	health      int
-	maxHealth   int
-	hurtFrames  int
-	deathFrames int
-	dead        bool
-}
-
-// start code for player logic
-type Player struct {
-	sprite         draw2d.Sprite
-	obj            *resolv.Object
-	weapon         *weapon.Weapon
-	hand           draw2d.Point
-	moving         bool
-	attacking      bool
-	attackCooldown int
-}
-
-type Projectile struct {
-	start rl.Vector2
-	end   rl.Vector2
-	ttl   int
-
-	// for something like an arrow perhaps
-	velocity   int
-	trajectory float64 //degrees
-	sprite     draw2d.Sprite
-
-	// sender     *interface{} at somepoint this would be good to have
-}
 
 const (
 	screenWidth  = 1000
@@ -64,19 +30,16 @@ var (
 	running  = true
 	bkgColor = rl.NewColor(147, 211, 196, 255)
 
-	texture             rl.Texture2D
-	worldCollisionSpace *resolv.Space
-	enemies             []*Enemy
+	texture rl.Texture2D // eventually this should be remove and draw2d used everywhere
+	enemies []*structs.Enemy
 
-	projectiles []Projectile
-
-	player Player
+	firstPlayer structs.Player
 
 	// TODO find a better way
-	playerSword               *weapon.Weapon
-	playerBow                 *weapon.Weapon
-	playerBowThatShootSwords  *weapon.Weapon
-	playerSwordThatShootsBows *weapon.Weapon
+	playerSword               *structs.Weapon
+	playerBow                 *structs.Weapon
+	playerBowThatShootSwords  *structs.Weapon
+	playerSwordThatShootsBows *structs.Weapon
 
 	playerSpeed   float32 = 3
 	playerUp      bool
@@ -85,9 +48,7 @@ var (
 	playerLeft    bool
 	playerFlipped bool
 
-	enemy Enemy
-
-	frameCount int
+	firstEnemy structs.Enemy
 
 	tileDest          rl.Rectangle
 	tileSrc           rl.Rectangle
@@ -101,116 +62,8 @@ var (
 
 	musicPaused bool = true
 	music       rl.Music
-
-	// TODO this should probably have some module to handle sound effects
-	swordSound rl.Sound
-
-	cam rl.Camera2D
+	cam         rl.Camera2D
 )
-
-func degreesToRadians(d float64) float64 {
-	return d * (math.Pi / 180)
-}
-
-func radiansToDegrees(r float64) float64 {
-	return r * (180 / math.Pi)
-}
-
-func (p *Projectile) draw() {
-	w := p.sprite.Dest.Width
-	h := p.sprite.Dest.Height
-	dest := rl.NewRectangle(p.start.X, p.start.Y, w, h)
-	rl.DrawTexturePro(texture, p.sprite.Src, dest,
-		rl.NewVector2(dest.Width/2, dest.Height), float32(180-p.trajectory), rl.White)
-
-}
-
-func (e *Enemy) draw() {
-	tintColor := rl.White
-
-	if frameCount%8 == 1 && !e.dead {
-		e.sprite.Frame++
-	}
-	if e.sprite.Frame > 3 {
-		e.sprite.Frame = 0
-	}
-
-	if e.hurtFrames > 0 {
-		tintColor = rl.Red
-		e.hurtFrames--
-	} else {
-		tintColor = rl.White
-	}
-	if e.deathFrames > 0 {
-		if e.sprite.Rotation < 90 {
-			e.sprite.Rotation = float32(math.Min(90, float64(e.sprite.Rotation)+8))
-		}
-		e.deathFrames--
-	}
-
-	e.sprite.Src.X = 368                                                                       // pixel where rest idle starts
-	e.sprite.Src.X += float32(e.sprite.Frame) * float32(math.Abs(float64(e.sprite.Src.Width))) // rolling the animation
-
-	rl.DrawTexturePro(texture, e.sprite.Src, e.sprite.Dest, rl.NewVector2(e.sprite.Dest.Width, e.sprite.Dest.Height), e.sprite.Rotation, tintColor)
-
-	if e.health != e.maxHealth && !e.dead {
-		rl.DrawRectangle(int32(e.obj.X), int32(e.obj.Y-10), int32(e.obj.W), 4, rl.Red)
-		rl.DrawRectangle(int32(e.obj.X), int32(e.obj.Y-10), int32(int(e.obj.W)*e.health/e.maxHealth), 4, rl.Green)
-	}
-}
-
-func (e *Enemy) hurt() {
-	e.hurtFrames = 16
-	e.health -= 1
-	if e.health <= 0 {
-		e.die()
-	}
-}
-
-func (e *Enemy) die() {
-	e.deathFrames = 32
-	e.dead = true
-	worldCollisionSpace.Remove(e.obj)
-}
-
-func (p *Player) move(dx, dy float64) {
-	p.obj.X += dx
-	p.obj.Y += dy
-	p.obj.Update()
-	p.sprite.Dest.X = draw2d.RectFromObj(player.obj).X
-	p.sprite.Dest.Y = draw2d.RectFromObj(player.obj).Y
-	p.weapon.Move(dx, dy)
-}
-
-func (p *Player) draw() {
-	if frameCount%8 == 1 {
-		p.sprite.Frame++
-	}
-	if p.sprite.Frame > 3 {
-		p.sprite.Frame = 0
-	}
-	var weaponOffset float32 = 0
-	if p.moving {
-		p.sprite.Src.X = 192                                                                       // pixel where run animation starts
-		p.sprite.Src.X += float32(p.sprite.Frame) * float32(math.Abs(float64(p.sprite.Src.Width))) // rolling the animation
-		weaponOffset = -4
-	} else {
-		if rl.GetScreenWidth()/2 <= int(rl.GetMouseX()) {
-			draw2d.FlipRight(&p.sprite.Src)
-			playerFlipped = false
-		} else {
-			draw2d.FlipLeft(&p.sprite.Src)
-			playerFlipped = true
-		}
-		p.sprite.Src.X = 128                                                                       // pixel where rest idle starts
-		p.sprite.Src.X += float32(p.sprite.Frame) * float32(math.Abs(float64(p.sprite.Src.Width))) // rolling the animation
-	}
-	p.weapon.SpriteFlipped = playerFlipped
-	player.moving = false
-	rl.DrawTexturePro(texture, p.sprite.Src, p.sprite.Dest, rl.NewVector2(p.sprite.Dest.Width, p.sprite.Dest.Height), 0, rl.White)
-	updateFrame := frameCount%8 == 0
-	p.weapon.Draw(p.sprite.Frame, updateFrame, weaponOffset)
-}
 
 type lineDrawParam struct {
 	x1, y1 int // start
@@ -218,63 +71,9 @@ type lineDrawParam struct {
 	color  rl.Color
 }
 
-func (p *Player) attack() {
-	rl.PlaySound(swordSound)
-	p.weapon.AttackFrame = 0 // find a better way to trigger animation than this.
-	player.attackCooldown = p.weapon.Cooldown
-
-	playerCenter := draw2d.Point{
-		X: float32(player.obj.X + player.obj.W/2),
-		Y: float32(player.obj.Y + player.obj.H/2),
-	}
-	rl.DrawCircleLines(int32(playerCenter.X), int32(playerCenter.Y), 32, rl.Green)
-	angle := getPlayerToMouseAngleDegress()
-
-	// TODO use weapon attributes in the future to determine this logic
-	projectileCount := p.weapon.ProjectileCount
-	projectileReach := p.weapon.Projectilelength
-	projectileSpread := p.weapon.ProjectileSpreadDegrees
-	projectileTTL := p.weapon.ProjectileTTLFrames
-	projectileVelocity := p.weapon.ProjectileVelocity
-	projectileSpreadItter := int(float64(angle) - math.Floor(float64(projectileCount)/2)*float64(projectileSpread))
-
-	for i := 0; i < projectileCount; i++ {
-		x2 := int(float64(projectileReach) * math.Sin(degreesToRadians(float64(projectileSpreadItter))))
-		y2 := int(float64(projectileReach) * math.Cos(degreesToRadians(float64(projectileSpreadItter))))
-		var projectileTrajectory float64
-		if projectileVelocity > 0 {
-			projectileTrajectory = float64(projectileSpreadItter)
-		}
-		projectiles = append(projectiles,
-			Projectile{
-				start:      rl.NewVector2(playerCenter.X, playerCenter.Y),
-				end:        rl.NewVector2(playerCenter.X+float32(x2), playerCenter.Y+float32(y2)),
-				ttl:        projectileTTL,
-				velocity:   projectileVelocity,
-				trajectory: projectileTrajectory,
-				sprite: draw2d.Sprite{
-					Src:  p.weapon.ProjectileSpriteSrc.Src,
-					Dest: p.weapon.ProjectileSpriteSrc.Dest,
-				},
-			})
-		projectileSpreadItter += projectileSpread
-	}
-	p.attacking = false
-}
-
-func (p *Player) equipWeapon(w *weapon.Weapon) {
-	// create new object from updated dest X/Y
-	w.Sprite.Dest.X = p.hand.X + float32(p.obj.X)
-	w.Sprite.Dest.Y = p.hand.Y + float32(p.obj.Y)
-	w.Obj = draw2d.ObjFromRect(w.Sprite.Dest)
-
-	// update player weapon
-	p.weapon = w
-}
-
 func getCameraTarget() rl.Vector2 {
-	playerCenterX := float32(player.obj.X + player.obj.W/2)
-	playerCenterY := float32(player.obj.Y + player.obj.H/2)
+	playerCenterX := float32(firstPlayer.Obj.X + firstPlayer.Obj.W/2)
+	playerCenterY := float32(firstPlayer.Obj.Y + firstPlayer.Obj.H/2)
 	return rl.NewVector2(playerCenterX, playerCenterY)
 }
 
@@ -308,7 +107,7 @@ func loadMap(mapFile string) {
 	spaceHeight := mapH * int(2*tileDest.Height)
 	spaceCellWidth := 1
 	spaceCellHeight := 1
-	worldCollisionSpace = resolv.NewSpace(spaceWidth, spaceHeight, spaceCellWidth, spaceCellHeight)
+	collisionengine.WorldCollisionSpace = resolv.NewSpace(spaceWidth, spaceHeight, spaceCellWidth, spaceCellHeight)
 
 	for i, val := range sliced[2:] {
 		if i < mapW*mapH {
@@ -342,7 +141,7 @@ func loadMap(mapFile string) {
 
 	}
 
-	worldCollisionSpace.Add(objects...)
+	collisionengine.WorldCollisionSpace.Add(objects...)
 }
 
 /*
@@ -366,7 +165,7 @@ type collisionOffset struct {
 }
 
 var (
-	tileMapIndex = map[string]map[int]draw2d.Point{
+	tileMapIndex = map[string]map[int]structs.Point{
 		"_": emptyTileMap,
 		"f": floorTileMap,
 		"w": wallTileMap,
@@ -377,10 +176,10 @@ var (
 		".": {0, 0, 0, 0}, // probably more efficient to just skip writting a collision here
 		"d": {L: .8, R: .8, T: .3, B: 1},
 	}
-	emptyTileMap = map[int]draw2d.Point{
+	emptyTileMap = map[int]structs.Point{
 		0: {X: 0, Y: 0},
 	}
-	floorTileMap = map[int]draw2d.Point{
+	floorTileMap = map[int]structs.Point{
 		1: {X: 16, Y: 64}, // plain floor
 		2: {X: 32, Y: 64}, // really cracked floor
 		3: {X: 48, Y: 64}, // kinda cracked floor
@@ -391,7 +190,7 @@ var (
 		8: {X: 32, Y: 96}, // top left whole
 		9: {X: 48, Y: 96}, // ladder
 	}
-	wallTileMap = map[int]draw2d.Point{
+	wallTileMap = map[int]structs.Point{
 		1:  {X: 16, Y: 0},   // top left
 		2:  {X: 32, Y: 0},   // top mid
 		3:  {X: 48, Y: 0},   // top right
@@ -419,7 +218,7 @@ var (
 		25: {X: 80, Y: 160}, // wall_inner_corner_t_top_left 80 160 16 16
 		26: {X: 64, Y: 160}, // wall_inner_corner_t_top_rigth 64 160 16 16
 	}
-	decorTileMap = map[int]draw2d.Point{
+	decorTileMap = map[int]structs.Point{
 		1:  {X: 64, Y: 0},   // wall_fountain_top 64 0 16 16
 		2:  {X: 64, Y: 16},  // wall_fountain_mid_red_anim 64 16 16 16 3
 		3:  {X: 64, Y: 32},  // wall_fountain_basin_red_anim 64 32 16 16 3
@@ -468,7 +267,7 @@ func drawMapBackground() []drawParams {
 			rl.DrawTexturePro(texture, fillTile, tileDest, rl.NewVector2(tileDest.Width, tileDest.Height), 0, rl.White)
 
 			// draw behind player if Y is "behind" player, but skip this with Walls
-			if tileDest.Y > player.sprite.Dest.Y || strings.ToLower(srcMap[i]) == "w" {
+			if tileDest.Y > firstPlayer.Sprite.Dest.Y || strings.ToLower(srcMap[i]) == "w" {
 				foreGroundDrawParams = append(
 					foreGroundDrawParams,
 					drawParams{
@@ -502,12 +301,12 @@ func drawScene() {
 				The Player.Draw() could make sure that the wielded weapon
 				is drawn as well as the player itself.
 	*/
-	player.draw()
+	firstPlayer.Draw()
 	for _, e := range enemies {
-		e.draw()
+		e.Draw()
 	}
-	for _, p := range projectiles {
-		p.draw()
+	for _, p := range projectileengine.Projectiles {
+		p.Draw()
 	}
 	// draw foreground after player
 	for _, draw := range foreGround {
@@ -517,47 +316,33 @@ func drawScene() {
 	// draw debug collision objects
 	if debugMode {
 		for _, o := range collisionMapDebug {
-			mo := draw2d.ObjFromRect(o)
+			mo := util.ObjFromRect(o)
 			rl.DrawRectangleLines(int32(mo.X), int32(mo.Y), int32(mo.W), int32(mo.H), rl.White)
 		}
 
-		for _, p := range projectiles {
-			rl.DrawLine(int32(p.start.X), int32(p.start.Y), int32(p.end.X), int32(p.end.Y), rl.Pink)
+		for _, p := range projectileengine.Projectiles {
+			rl.DrawLine(int32(p.Start.X), int32(p.Start.Y), int32(p.End.X), int32(p.End.Y), rl.Pink)
 		}
 
 		// debug player collision box
-		po := player.obj
+		po := firstPlayer.Obj
 		rl.DrawRectangleLines(int32(po.X), int32(po.Y), int32(po.W), int32(po.H), rl.Orange)
 
 		for _, e := range enemies {
-			rl.DrawRectangleLines(int32(e.obj.X), int32(e.obj.Y), int32(e.obj.W), int32(e.obj.H), rl.White)
+			rl.DrawRectangleLines(int32(e.Obj.X), int32(e.Obj.Y), int32(e.Obj.W), int32(e.Obj.H), rl.White)
 
 		}
 
-		playerCenter := draw2d.Point{
-			X: float32(player.obj.X + player.obj.W/2),
-			Y: float32(player.obj.Y + player.obj.H/2),
+		playerCenter := structs.Point{
+			X: float32(firstPlayer.Obj.X + firstPlayer.Obj.W/2),
+			Y: float32(firstPlayer.Obj.Y + firstPlayer.Obj.H/2),
 		}
 		rl.DrawCircleLines(int32(playerCenter.X), int32(playerCenter.Y), 32, rl.Green)
-		angle := getPlayerToMouseAngleDegress()
+		angle := util.GetPlayerToMouseAngleDegress()
 		rl.DrawCircleSectorLines(rl.NewVector2(playerCenter.X, playerCenter.Y), 32, angle, angle-45, 5, rl.White)
 		rl.DrawCircleSectorLines(rl.NewVector2(playerCenter.X, playerCenter.Y), 32, angle, angle+45, 5, rl.White)
 	}
 
-}
-
-/*
-returns degrees mouse is from player
-rise/run seem to be flipped because x/y are 90 degrees off in game engines
-*/
-func getPlayerToMouseAngleDegress() float32 {
-	rise := float64(rl.GetMouseX()) - float64(rl.GetScreenWidth()/2)
-	run := float64(rl.GetMouseY()) - float64(rl.GetScreenHeight()/2)
-	angle := float32(radiansToDegrees(math.Atan(rise / run)))
-	if run < 0 {
-		angle += 180
-	}
-	return angle
 }
 
 func drawUI() {
@@ -565,17 +350,17 @@ func drawUI() {
 		rl.DrawRectangleRounded(rl.NewRectangle(3, 3, 500, 90), .1, 10, rl.DarkGray)
 		rl.DrawRectangleRoundedLines(rl.NewRectangle(3, 3, 500, 90), .1, 10, 3, rl.White)
 		rl.DrawText(fmt.Sprintf("FPS: %v", rl.GetFPS()), 10, 10, 16, rl.White)
-		rl.DrawText(fmt.Sprintf("player {X: %v, Y:%v}", player.obj.X, player.obj.Y), 10, 30, 16, rl.White)
+		rl.DrawText(fmt.Sprintf("player {X: %v, Y:%v}", firstPlayer.Obj.X, firstPlayer.Obj.Y), 10, 30, 16, rl.White)
 		rl.DrawText(fmt.Sprintf("mouse  {X: %v, Y:%v}", rl.GetMouseX(), rl.GetMouseY()), 10, 50, 16, rl.White)
 
 		// wierd thing where rise/run are opposite directions (think it has to do with x/y being negative flipped)
 		rise := float64(rl.GetMouseX()) - float64(rl.GetScreenWidth()/2)
 		run := float64(rl.GetMouseY()) - float64(rl.GetScreenHeight())/2
 
-		angle := getPlayerToMouseAngleDegress()
+		angle := util.GetPlayerToMouseAngleDegress()
 		rl.DrawText(fmt.Sprintf("mouse->player  {X: %v, Y:%v}", rise, run), 10, 70, 16, rl.White)
 		rl.DrawText(fmt.Sprintf("Atan(%v/%v) = %v degrees", rise, run, int(angle)), 250, 10, 16, rl.White)
-		rl.DrawText(fmt.Sprintf("Live Projectiles: %v", len(projectiles)), 250, 30, 16, rl.White)
+		rl.DrawText(fmt.Sprintf("Live Projectiles: %v", len(projectileengine.Projectiles)), 250, 30, 16, rl.White)
 	}
 }
 
@@ -585,19 +370,19 @@ func input() {
 		A map of input managers that need to be invoked and their corresponding inputs to manage
 	*/
 	if rl.IsKeyDown(rl.KeyW) || rl.IsKeyDown(rl.KeyUp) {
-		player.moving = true
+		firstPlayer.Moving = true
 		playerUp = true
 	}
 	if rl.IsKeyDown(rl.KeyS) || rl.IsKeyDown(rl.KeyDown) {
-		player.moving = true
+		firstPlayer.Moving = true
 		playerDown = true
 	}
 	if rl.IsKeyDown(rl.KeyA) || rl.IsKeyDown(rl.KeyLeft) {
-		player.moving = true
+		firstPlayer.Moving = true
 		playerLeft = true
 	}
 	if rl.IsKeyDown(rl.KeyD) || rl.IsKeyDown(rl.KeyRight) {
-		player.moving = true
+		firstPlayer.Moving = true
 		playerRight = true
 	}
 	if rl.IsKeyPressed(rl.KeyQ) {
@@ -615,16 +400,16 @@ func input() {
 		}
 	}
 	if rl.IsMouseButtonDown(rl.MouseLeftButton) {
-		player.attacking = true
+		firstPlayer.Attacking = true
 	}
 	if rl.IsKeyPressed(rl.KeyOne) {
-		player.equipWeapon(playerSword)
+		firstPlayer.EquipWeapon(playerSword)
 	} else if rl.IsKeyPressed(rl.KeyTwo) {
-		player.equipWeapon(playerBow)
+		firstPlayer.EquipWeapon(playerBow)
 	} else if rl.IsKeyPressed(rl.KeyThree) {
-		player.equipWeapon(playerBowThatShootSwords)
+		firstPlayer.EquipWeapon(playerBowThatShootSwords)
 	} else if rl.IsKeyPressed(rl.KeyFour) {
-		player.equipWeapon(playerSwordThatShootsBows)
+		firstPlayer.EquipWeapon(playerSwordThatShootsBows)
 	}
 
 }
@@ -649,7 +434,7 @@ func linesFromRect(rect rl.Rectangle) []Line {
 func update() {
 	running = !rl.WindowShouldClose()
 
-	if player.moving {
+	if firstPlayer.Moving {
 		// used for collision check
 		dx := 0.0
 		dy := 0.0
@@ -661,80 +446,80 @@ func update() {
 			dy += float64(playerSpeed)
 		}
 		if playerRight {
-			draw2d.FlipRight(&player.sprite.Src)
+			util.FlipRight(&firstPlayer.Sprite.Src)
 			dx += float64(playerSpeed)
 			playerFlipped = false
 		}
 		if playerLeft {
-			draw2d.FlipLeft(&player.sprite.Src)
+			util.FlipLeft(&firstPlayer.Sprite.Src)
 			dx -= float64(playerSpeed)
 			playerFlipped = true
 		}
 		// check for collisions
-		if collision := player.obj.Check(0, dy, "env"); collision != nil {
+		if collision := firstPlayer.Obj.Check(0, dy, "env"); collision != nil {
 			//fmt.Println("Y axis collision happened: ", collision)
 			// hueristically stop movement on collision because the other way is buggy
 			dy = 0
 		}
-		if collision := player.obj.Check(dx, 0, "env"); collision != nil {
+		if collision := firstPlayer.Obj.Check(dx, 0, "env"); collision != nil {
 			//fmt.Println("X axis collision happened: ", collision)
 			// hueristically stop movement on collision because the other way is buggy
 			dx = 0
 		}
-		if collision := player.obj.Check(dx, dy, "enemy"); collision != nil {
+		if collision := firstPlayer.Obj.Check(dx, dy, "enemy"); collision != nil {
 			dx /= 4
 			dy /= 4
 		}
-		player.move(dx, dy)
+		firstPlayer.Move(dx, dy)
 	}
 
-	if player.attackCooldown > 0 {
-		player.attackCooldown--
-		player.attacking = false
+	if firstPlayer.AttackCooldown > 0 {
+		firstPlayer.AttackCooldown--
+		firstPlayer.Attacking = false
 	}
-	if player.attacking {
-		player.attack()
+	if firstPlayer.Attacking {
+		projectileengine.Projectiles = append(projectileengine.Projectiles, firstPlayer.Attack()...)
 	}
 
-	var nextFrameProjectiles []Projectile
+	var nextFrameProjectiles []structs.Projectile
 
-	for _, p := range projectiles {
-		if p.ttl > 0 {
+	for _, p := range projectileengine.Projectiles {
+		if p.Ttl > 0 {
 			var collision bool
-			p.ttl--
-			if p.velocity > 0 {
+			p.Ttl--
+			if p.Velocity > 0 {
 				// find delta x and y
 				var dx float32
 				var dy float32
-				switch p.trajectory {
+				switch p.Trajectory {
 				case -90:
-					dx, dy = float32(-p.velocity), 0 // -x
+					dx, dy = float32(-p.Velocity), 0 // -x
 				case 0:
-					dx, dy = 0, float32(p.velocity) // +y
+					dx, dy = 0, float32(p.Velocity) // +y
 				case 90:
-					dx, dy = float32(p.velocity), 0 // +x
+					dx, dy = float32(p.Velocity), 0 // +x
 				case 180:
-					dx, dy = 0, float32(-p.velocity) // -y
+					dx, dy = 0, float32(-p.Velocity) // -y
 				default:
-					dx = float32(p.velocity) * float32(math.Sin(degreesToRadians(p.trajectory)))
-					dy = float32(p.velocity) * float32(math.Cos(degreesToRadians(p.trajectory)))
+					dx = float32(p.Velocity) * float32(math.Sin(util.DegreesToRadians(p.Trajectory)))
+					dy = float32(p.Velocity) * float32(math.Cos(util.DegreesToRadians(p.Trajectory)))
 				}
 				// add delta x and y to both x1,y1 and x2,y2
-				p.start.X += dx
-				p.start.Y += dy
-				p.end.X += dx
-				p.end.Y += dy
+				p.Start.X += dx
+				p.Start.Y += dy
+				p.End.X += dx
+				p.End.Y += dy
 			}
 			for _, e := range enemies {
-				for _, line := range linesFromRect(draw2d.RectFromObj(e.obj)) {
+				for _, line := range linesFromRect(util.RectFromObj(e.Obj)) {
 					var collisionPoint *rl.Vector2
-					collision = rl.CheckCollisionLines(p.start, p.end, line.start, line.end, collisionPoint)
+					collision = rl.CheckCollisionLines(p.Start, p.End, line.start, line.end, collisionPoint)
 					if collision {
 						break
 					}
 				}
 				if collision {
-					e.hurt()
+					e.Hurt()
 					break
 				}
 			}
@@ -745,17 +530,17 @@ func update() {
 			// If TTL not > 0 then let this projectile "fade away"
 		}
 	}
-	projectiles = nextFrameProjectiles
+	projectileengine.Projectiles = nextFrameProjectiles
 
-	var survivingEnemies []*Enemy
+	var survivingEnemies []*structs.Enemy
 	for _, e := range enemies {
-		if !e.dead || e.deathFrames > 0 {
+		if !e.Dead || e.DeathFrames > 0 {
 			survivingEnemies = append(survivingEnemies, e)
 		}
 	}
 	enemies = survivingEnemies
 
-	frameCount++
+	game.FrameCount++
 
 	rl.UpdateMusicStream(music)
 
@@ -785,27 +570,29 @@ func initialize() {
 	rl.SetExitKey(0)
 	rl.SetTargetFPS(60)
 
-	texture = draw2d.InitTexture()
+	draw2d.InitTexture()
+	texture = draw2d.Texture
+	soundengine.InitializeSounds()
 
-	playerSprite := draw2d.Sprite{
+	playerSprite := structs.Sprite{
 		Src:  rl.NewRectangle(128, 100, 16, 28),
 		Dest: rl.NewRectangle(285, 200, 32, 56),
 	}
 
-	playerObj := draw2d.ObjFromRect(playerSprite.Dest)
+	playerObj := util.ObjFromRect(playerSprite.Dest)
 	playerObj.H *= .6
 
-	player = Player{
-		sprite: playerSprite,
-		obj:    playerObj,
-		hand:   draw2d.Point{X: float32(playerObj.W) * .5, Y: float32(playerObj.H) * .94},
+	firstPlayer = structs.Player{
+		Sprite: playerSprite,
+		Obj:    playerObj,
+		Hand:   structs.Point{X: float32(playerObj.W) * .5, Y: float32(playerObj.H) * .94},
 	}
 
-	player.sprite.Dest.X = draw2d.RectFromObj(player.obj).X
-	player.sprite.Dest.Y = draw2d.RectFromObj(player.obj).Y
-	player.obj.AddTags("Player")
+	firstPlayer.Sprite.Dest.X = util.RectFromObj(firstPlayer.Obj).X
+	firstPlayer.Sprite.Dest.Y = util.RectFromObj(firstPlayer.Obj).Y
+	firstPlayer.Obj.AddTags("Player")
 
-	swordSprite := draw2d.Sprite{
+	swordSprite := structs.Sprite{
 		// src: rl.NewRectangle(307, 26, 10, 21), // rusty sword
 		// src: rl.NewRectangle(339, 114, 10, 29), // weapon_knight_sword
 		// src: rl.NewRectangle(310, 124, 8, 19), // cleaver
@@ -814,22 +601,22 @@ func initialize() {
 		Src: rl.NewRectangle(339, 26, 10, 21), // weapon_red_gem_sword
 
 		Dest: rl.NewRectangle(
-			player.hand.X+float32(player.obj.X),
-			player.hand.Y+float32(player.obj.Y),
+			firstPlayer.Hand.X+float32(firstPlayer.Obj.X),
+			firstPlayer.Hand.Y+float32(firstPlayer.Obj.Y),
 			10*1.35,
 			21*1.35,
 		),
 	}
 
-	playerSword = &weapon.Weapon{
+	playerSword = &structs.Weapon{
 		Sprite: swordSprite,
-		Obj:    draw2d.ObjFromRect(swordSprite.Dest),
+		Obj:    util.ObjFromRect(swordSprite.Dest),
 		// handle is the origin offset for the sprite
-		Handle:       draw2d.Point{X: swordSprite.Dest.Width * .5, Y: swordSprite.Dest.Height * .9},
+		Handle:       structs.Point{X: swordSprite.Dest.Width * .5, Y: swordSprite.Dest.Height * .9},
 		AttackSpeed:  8,
 		Cooldown:     24,
 		IdleRotation: -30,
-		AttackRotator: func(w weapon.Weapon) float32 {
+		AttackRotator: func(w structs.Weapon) float32 {
 			return w.IdleRotation * -3 / float32(w.AttackSpeed) * float32(w.AttackFrame)
 		},
 		ProjectileCount:         3,
@@ -839,33 +626,33 @@ func initialize() {
 		TintColor:               rl.White,
 	}
 
-	bowSprite := draw2d.Sprite{
+	bowSprite := structs.Sprite{
 		Src: rl.NewRectangle(325, 180, 7, 25), // weapon_bow 325 180 7 25
 
 		Dest: rl.NewRectangle(
-			player.hand.X+float32(player.obj.X),
-			player.hand.Y+float32(player.obj.Y),
+			firstPlayer.Hand.X+float32(firstPlayer.Obj.X),
+			firstPlayer.Hand.Y+float32(firstPlayer.Obj.Y),
 			7*1.1,
 			25*1.1,
 		),
 	}
 
-	arrowSpriteSource := draw2d.Sprite{
+	arrowSpriteSource := structs.Sprite{
 		Src:  rl.NewRectangle(308, 186, 7, 21),     // weapon_arrow 308 186 7 21
 		Dest: rl.NewRectangle(0, 0, 7*1.5, 21*1.5), // only using h, w for scaling
 	}
 
-	playerBow = &weapon.Weapon{
+	playerBow = &structs.Weapon{
 		Sprite:              bowSprite,
 		ProjectileSpriteSrc: arrowSpriteSource,
 
-		Obj: draw2d.ObjFromRect(bowSprite.Dest),
+		Obj: util.ObjFromRect(bowSprite.Dest),
 		// handle is the origin offset for the sprite
-		Handle:       draw2d.Point{X: bowSprite.Dest.Width * .5, Y: bowSprite.Dest.Height * .75},
+		Handle:       structs.Point{X: bowSprite.Dest.Width * .5, Y: bowSprite.Dest.Height * .75},
 		AttackSpeed:  8,
 		Cooldown:     24,
 		IdleRotation: 20,
-		AttackRotator: func(w weapon.Weapon) float32 {
+		AttackRotator: func(w structs.Weapon) float32 {
 			// TODO make it follow mouse -- for now make it 0
 			return 0
 		},
@@ -877,33 +664,33 @@ func initialize() {
 		TintColor:               rl.White,
 	}
 
-	bowThatShootsSwordsSprite := draw2d.Sprite{
+	bowThatShootsSwordsSprite := structs.Sprite{
 		Src: rl.NewRectangle(325, 180, 7, 25), // weapon_bow 325 180 7 25
 
 		Dest: rl.NewRectangle(
-			player.hand.X+float32(player.obj.X),
-			player.hand.Y+float32(player.obj.Y),
+			firstPlayer.Hand.X+float32(firstPlayer.Obj.X),
+			firstPlayer.Hand.Y+float32(firstPlayer.Obj.Y),
 			7*1.1,
 			25*1.1,
 		),
 	}
 
-	swordArrowSpriteSource := draw2d.Sprite{
+	swordArrowSpriteSource := structs.Sprite{
 		Src:  rl.NewRectangle(339, 114, 10, 29),     // weapon_knight_sword 339 114 10 29
 		Dest: rl.NewRectangle(0, 0, 10*1.5, 29*1.5), // only using h, w for scaling
 	}
 
-	playerBowThatShootSwords = &weapon.Weapon{
+	playerBowThatShootSwords = &structs.Weapon{
 		Sprite:              bowThatShootsSwordsSprite,
 		ProjectileSpriteSrc: swordArrowSpriteSource,
 
-		Obj: draw2d.ObjFromRect(bowSprite.Dest),
+		Obj: util.ObjFromRect(bowSprite.Dest),
 		// handle is the origin offset for the sprite
-		Handle:       draw2d.Point{X: bowSprite.Dest.Width * .5, Y: bowSprite.Dest.Height * .75},
+		Handle:       structs.Point{X: bowSprite.Dest.Width * .5, Y: bowSprite.Dest.Height * .75},
 		AttackSpeed:  8,
 		Cooldown:     24,
 		IdleRotation: 20,
-		AttackRotator: func(w weapon.Weapon) float32 {
+		AttackRotator: func(w structs.Weapon) float32 {
 			// TODO make it follow mouse -- for now make it 0
 			return 0
 		},
@@ -915,33 +702,33 @@ func initialize() {
 		TintColor:               rl.Blue,
 	}
 
-	swordThatShootsBowsSprite := draw2d.Sprite{
+	swordThatShootsBowsSprite := structs.Sprite{
 		Src: rl.NewRectangle(322, 81, 12, 30), // weapon_anime_sword 322 81 12 30
 
 		Dest: rl.NewRectangle(
-			player.hand.X+float32(player.obj.X),
-			player.hand.Y+float32(player.obj.Y),
+			firstPlayer.Hand.X+float32(firstPlayer.Obj.X),
+			firstPlayer.Hand.Y+float32(firstPlayer.Obj.Y),
 			12*1.1,
 			30*1.1,
 		),
 	}
 
-	bowArrowSpriteSource := draw2d.Sprite{
+	bowArrowSpriteSource := structs.Sprite{
 		Src:  rl.NewRectangle(325, 180, 7, 25),     // weapon_bow 325 180 7 25
 		Dest: rl.NewRectangle(0, 0, 7*1.5, 25*1.5), // only using h, w for scaling
 	}
 
-	playerSwordThatShootsBows = &weapon.Weapon{
+	playerSwordThatShootsBows = &structs.Weapon{
 		Sprite:              swordThatShootsBowsSprite,
 		ProjectileSpriteSrc: bowArrowSpriteSource,
 
-		Obj: draw2d.ObjFromRect(swordSprite.Dest),
+		Obj: util.ObjFromRect(swordSprite.Dest),
 		// handle is the origin offset or the sprite
-		Handle:       draw2d.Point{X: swordSprite.Dest.Width * .5, Y: swordSprite.Dest.Height * .99},
+		Handle:       structs.Point{X: swordSprite.Dest.Width * .5, Y: swordSprite.Dest.Height * .99},
 		AttackSpeed:  8,
 		Cooldown:     24,
 		IdleRotation: -30,
-		AttackRotator: func(w weapon.Weapon) float32 {
+		AttackRotator: func(w structs.Weapon) float32 {
 			return w.IdleRotation * -3 / float32(w.AttackSpeed) * float32(w.AttackFrame)
 		},
 		ProjectileCount:         3,
@@ -952,53 +739,50 @@ func initialize() {
 		TintColor:               rl.White,
 	}
 
-	player.weapon = playerSword
+	firstPlayer.Weapon = playerSword
 
 	// Test enemy orc_warrior_idle_anim 368 204 16 20 4
-	enemySprite := draw2d.Sprite{
+	enemySprite := structs.Sprite{
 		Src:        rl.NewRectangle(368, 204, 16, 24),
 		Dest:       rl.NewRectangle(250, 250, 32, 48),
 		FrameCount: 4,
 	}
 
-	enemyObj := draw2d.ObjFromRect(enemySprite.Dest)
+	enemyObj := util.ObjFromRect(enemySprite.Dest)
 	enemyObj.Y += enemyObj.H * .2
 	enemyObj.H *= .7
 	enemyObj.X += enemyObj.W * .2
 	enemyObj.W *= .8
 	enemyObj.AddTags("enemy")
-	enemy = Enemy{
-		sprite:    enemySprite,
-		obj:       enemyObj,
-		health:    12,
-		maxHealth: 12,
+	firstEnemy = structs.Enemy{
+		Sprite:    enemySprite,
+		Obj:       enemyObj,
+		Health:    12,
+		MaxHealth: 12,
 	}
-	enemies = append(enemies, &enemy)
+	enemies = append(enemies, &firstEnemy)
 
 	rl.InitAudioDevice()
 	music = rl.LoadMusicStream("resources/audio/tracks/ting ting.mp3")
-
-	// TODO find a more sophisticated way to handle sound effect
-	swordSound = rl.LoadSound("resources/audio/effects/swing-whoosh.mp3")
 
 	// music = rl.LoadMusicStream("resources/audio/Underworld Coffee Shop.mp3")
 	rl.PlayMusicStream(music)
 
 	cam = rl.NewCamera2D(rl.NewVector2(screenWidth/2, screenHeight/2), getCameraTarget(), 0.0, 1.25)
 	loadMap("resources/maps/first.map")
-	worldCollisionSpace.Add(player.obj, enemyObj)
+	collisionengine.WorldCollisionSpace.Add(firstPlayer.Obj, enemyObj)
 }
 
 func quit() {
 	draw2d.UnloadTexture()
+	soundengine.UnloadSounds()
 	rl.UnloadMusicStream(music)
-	rl.UnloadSound(swordSound)
+
 	rl.CloseWindow()
 }
 
 func main() {
 	initialize()
-	fmt.Println(test())
 	// Each Frame
 	for running {
 		input()
