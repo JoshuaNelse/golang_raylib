@@ -2,7 +2,7 @@ package structs
 
 import (
 	"math"
-	soundengine "raylib/playground/engines/sound-engine"
+	audioengine "raylib/playground/engines/audio-engine"
 	"raylib/playground/game"
 	util "raylib/playground/game/utils"
 	"raylib/playground/structs/draw2d"
@@ -67,7 +67,7 @@ func (p *Player) Draw() {
 }
 
 func (p *Player) Attack() []Projectile {
-	soundengine.PlaySound(soundengine.SwordSound)
+	audioengine.PlaySound(audioengine.SwordSound)
 	p.Weapon.AttackFrame = 0 // find a better way to trigger animation than this.
 	p.AttackCooldown = p.Weapon.Cooldown
 

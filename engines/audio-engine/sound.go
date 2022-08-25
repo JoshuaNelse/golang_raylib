@@ -1,14 +1,16 @@
-package soundengine
+package audioengine
 
-import rl "github.com/gen2brain/raylib-go/raylib"
+import (
+	rl "github.com/gen2brain/raylib-go/raylib"
+)
 
 var SwordSound rl.Sound
 
-func InitializeSounds() {
+func initializeSounds() {
 	SwordSound = rl.LoadSound("resources/audio/effects/swing-whoosh.mp3")
 }
 
-func UnloadSounds() {
+func unloadSounds() {
 	rl.UnloadSound(SwordSound)
 }
 

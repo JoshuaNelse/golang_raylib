@@ -6,9 +6,9 @@ import (
 	"io/ioutil"
 	"math"
 	"os"
+	audioengine "raylib/playground/engines/audio-engine"
 	collisionengine "raylib/playground/engines/collision-engine"
 	projectileengine "raylib/playground/engines/projectile-engine"
-	soundengine "raylib/playground/engines/sound-engine"
 	"raylib/playground/game"
 	util "raylib/playground/game/utils"
 	"raylib/playground/structs"
@@ -61,7 +61,6 @@ var (
 	mapH              int
 
 	musicPaused bool = true
-	music       rl.Music
 	cam         rl.Camera2D
 )
 
@@ -542,13 +541,13 @@ func update() {
 
 	game.FrameCount++
 
-	rl.UpdateMusicStream(music)
-
+	audioengine.UpdateMusicStream()
 	if musicPaused {
-		rl.PauseMusicStream(music)
+		audioengine.PauseMusicStream()
 	} else {
-		rl.ResumeMusicStream(music)
+		audioengine.ResumeMusicStream()
 	}
+
 	cam.Target = getCameraTarget()
 
 	playerUp, playerDown, playerRight, playerLeft = false, false, false, false
@@ -572,7 +571,7 @@ func initialize() {
 
 	draw2d.InitTexture()
 	texture = draw2d.Texture
-	soundengine.InitializeSounds()
+	audioengine.InitializeAudio()
 
 	playerSprite := structs.Sprite{
 		Src:  rl.NewRectangle(128, 100, 16, 28),
@@ -762,12 +761,6 @@ func initialize() {
 	}
 	enemies = append(enemies, &firstEnemy)
 
-	rl.InitAudioDevice()
-	music = rl.LoadMusicStream("resources/audio/tracks/ting ting.mp3")
-
-	// music = rl.LoadMusicStream("resources/audio/Underworld Coffee Shop.mp3")
-	rl.PlayMusicStream(music)
-
 	cam = rl.NewCamera2D(rl.NewVector2(screenWidth/2, screenHeight/2), getCameraTarget(), 0.0, 1.25)
 	loadMap("resources/maps/first.map")
 	collisionengine.WorldCollisionSpace.Add(firstPlayer.Obj, enemyObj)
@@ -775,21 +768,18 @@ func initialize() {
 
 func quit() {
 	draw2d.UnloadTexture()
-	soundengine.UnloadSounds()
-	rl.UnloadMusicStream(music)
-
+	audioengine.UnloadAudioComponents()
 	rl.CloseWindow()
 }
 
 func main() {
 	initialize()
+
 	// Each Frame
 	for running {
 		input()
 		update()
 		render()
 	}
-
 	quit()
-
 }
