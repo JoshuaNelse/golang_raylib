@@ -33,7 +33,10 @@ func (p *Player) Move(dx, dy float64) {
 	p.Obj.Update()
 	p.Sprite.Dest.X = util.RectFromObj(p.Obj).X
 	p.Sprite.Dest.Y = util.RectFromObj(p.Obj).Y
-	p.Weapon.Move(dx, dy)
+
+	ax := float64(p.Hand.X) + p.Obj.X
+	ay := float64(p.Hand.Y) + p.Obj.Y
+	p.Weapon.AnchoredMove(ax, ay)
 }
 
 func (p *Player) Draw() {

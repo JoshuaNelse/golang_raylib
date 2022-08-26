@@ -12,6 +12,8 @@ import (
 	"raylib/playground/game"
 	util "raylib/playground/game/utils"
 	"raylib/playground/structs"
+	"raylib/playground/structs/armory/bows"
+	"raylib/playground/structs/armory/swords"
 	"raylib/playground/structs/draw2d"
 	"strconv"
 
@@ -35,18 +37,11 @@ var (
 
 	firstPlayer structs.Player
 
-	// TODO find a better way
-	playerSword               *structs.Weapon
-	playerBow                 *structs.Weapon
-	playerBowThatShootSwords  *structs.Weapon
-	playerSwordThatShootsBows *structs.Weapon
-
-	playerSpeed   float32 = 3
-	playerUp      bool
-	playerDown    bool
-	playerRight   bool
-	playerLeft    bool
-	playerFlipped bool
+	playerSpeed float32 = 3
+	playerUp    bool
+	playerDown  bool
+	playerRight bool
+	playerLeft  bool
 
 	firstEnemy structs.Enemy
 
@@ -402,13 +397,13 @@ func input() {
 		firstPlayer.Attacking = true
 	}
 	if rl.IsKeyPressed(rl.KeyOne) {
-		firstPlayer.EquipWeapon(playerSword)
+		firstPlayer.EquipWeapon(swords.RegularSword())
 	} else if rl.IsKeyPressed(rl.KeyTwo) {
-		firstPlayer.EquipWeapon(playerBow)
+		firstPlayer.EquipWeapon(bows.RegularBow())
 	} else if rl.IsKeyPressed(rl.KeyThree) {
-		firstPlayer.EquipWeapon(playerBowThatShootSwords)
+		firstPlayer.EquipWeapon(bows.SwordShooter())
 	} else if rl.IsKeyPressed(rl.KeyFour) {
-		firstPlayer.EquipWeapon(playerSwordThatShootsBows)
+		firstPlayer.EquipWeapon(swords.BowShooter())
 	}
 
 }
@@ -447,12 +442,12 @@ func update() {
 		if playerRight {
 			util.FlipRight(&firstPlayer.Sprite.Src)
 			dx += float64(playerSpeed)
-			playerFlipped = false
+			firstPlayer.SpriteFlipped = false
 		}
 		if playerLeft {
 			util.FlipLeft(&firstPlayer.Sprite.Src)
 			dx -= float64(playerSpeed)
-			playerFlipped = true
+			firstPlayer.SpriteFlipped = true
 		}
 		// check for collisions
 		if collision := firstPlayer.Obj.Check(0, dy, "env"); collision != nil {
@@ -590,155 +585,7 @@ func initialize() {
 	firstPlayer.Sprite.Dest.X = util.RectFromObj(firstPlayer.Obj).X
 	firstPlayer.Sprite.Dest.Y = util.RectFromObj(firstPlayer.Obj).Y
 	firstPlayer.Obj.AddTags("Player")
-
-	swordSprite := structs.Sprite{
-		// src: rl.NewRectangle(307, 26, 10, 21), // rusty sword
-		// src: rl.NewRectangle(339, 114, 10, 29), // weapon_knight_sword
-		// src: rl.NewRectangle(310, 124, 8, 19), // cleaver
-		// src: rl.NewRectangle(325, 113, 9, 30), // weapon_duel_sword
-		// src: rl.NewRectangle(322, 81, 12, 30), // weapon_anime_sword
-		Src: rl.NewRectangle(339, 26, 10, 21), // weapon_red_gem_sword
-
-		Dest: rl.NewRectangle(
-			firstPlayer.Hand.X+float32(firstPlayer.Obj.X),
-			firstPlayer.Hand.Y+float32(firstPlayer.Obj.Y),
-			10*1.35,
-			21*1.35,
-		),
-	}
-
-	playerSword = &structs.Weapon{
-		Sprite: swordSprite,
-		Obj:    util.ObjFromRect(swordSprite.Dest),
-		// handle is the origin offset for the sprite
-		Handle:       structs.Point{X: swordSprite.Dest.Width * .5, Y: swordSprite.Dest.Height * .9},
-		AttackSpeed:  8,
-		Cooldown:     24,
-		IdleRotation: -30,
-		AttackRotator: func(w structs.Weapon) float32 {
-			return w.IdleRotation * -3 / float32(w.AttackSpeed) * float32(w.AttackFrame)
-		},
-		ProjectileCount:         3,
-		ProjectileSpreadDegrees: 45,
-		Projectilelength:        32,
-		ProjectileTTLFrames:     10,
-		TintColor:               rl.White,
-	}
-
-	bowSprite := structs.Sprite{
-		Src: rl.NewRectangle(325, 180, 7, 25), // weapon_bow 325 180 7 25
-
-		Dest: rl.NewRectangle(
-			firstPlayer.Hand.X+float32(firstPlayer.Obj.X),
-			firstPlayer.Hand.Y+float32(firstPlayer.Obj.Y),
-			7*1.1,
-			25*1.1,
-		),
-	}
-
-	arrowSpriteSource := structs.Sprite{
-		Src:  rl.NewRectangle(308, 186, 7, 21),     // weapon_arrow 308 186 7 21
-		Dest: rl.NewRectangle(0, 0, 7*1.5, 21*1.5), // only using h, w for scaling
-	}
-
-	playerBow = &structs.Weapon{
-		Sprite:              bowSprite,
-		ProjectileSpriteSrc: arrowSpriteSource,
-
-		Obj: util.ObjFromRect(bowSprite.Dest),
-		// handle is the origin offset for the sprite
-		Handle:       structs.Point{X: bowSprite.Dest.Width * .5, Y: bowSprite.Dest.Height * .75},
-		AttackSpeed:  8,
-		Cooldown:     24,
-		IdleRotation: 20,
-		AttackRotator: func(w structs.Weapon) float32 {
-			// TODO make it follow mouse -- for now make it 0
-			return 0
-		},
-		ProjectileCount:         1,
-		ProjectileSpreadDegrees: 0,
-		Projectilelength:        21,
-		ProjectileTTLFrames:     32,
-		ProjectileVelocity:      8,
-		TintColor:               rl.White,
-	}
-
-	bowThatShootsSwordsSprite := structs.Sprite{
-		Src: rl.NewRectangle(325, 180, 7, 25), // weapon_bow 325 180 7 25
-
-		Dest: rl.NewRectangle(
-			firstPlayer.Hand.X+float32(firstPlayer.Obj.X),
-			firstPlayer.Hand.Y+float32(firstPlayer.Obj.Y),
-			7*1.1,
-			25*1.1,
-		),
-	}
-
-	swordArrowSpriteSource := structs.Sprite{
-		Src:  rl.NewRectangle(339, 114, 10, 29),     // weapon_knight_sword 339 114 10 29
-		Dest: rl.NewRectangle(0, 0, 10*1.5, 29*1.5), // only using h, w for scaling
-	}
-
-	playerBowThatShootSwords = &structs.Weapon{
-		Sprite:              bowThatShootsSwordsSprite,
-		ProjectileSpriteSrc: swordArrowSpriteSource,
-
-		Obj: util.ObjFromRect(bowSprite.Dest),
-		// handle is the origin offset for the sprite
-		Handle:       structs.Point{X: bowSprite.Dest.Width * .5, Y: bowSprite.Dest.Height * .75},
-		AttackSpeed:  8,
-		Cooldown:     24,
-		IdleRotation: 20,
-		AttackRotator: func(w structs.Weapon) float32 {
-			// TODO make it follow mouse -- for now make it 0
-			return 0
-		},
-		ProjectileCount:         1,
-		ProjectileSpreadDegrees: 0,
-		Projectilelength:        21,
-		ProjectileTTLFrames:     32,
-		ProjectileVelocity:      8,
-		TintColor:               rl.Blue,
-	}
-
-	swordThatShootsBowsSprite := structs.Sprite{
-		Src: rl.NewRectangle(322, 81, 12, 30), // weapon_anime_sword 322 81 12 30
-
-		Dest: rl.NewRectangle(
-			firstPlayer.Hand.X+float32(firstPlayer.Obj.X),
-			firstPlayer.Hand.Y+float32(firstPlayer.Obj.Y),
-			12*1.1,
-			30*1.1,
-		),
-	}
-
-	bowArrowSpriteSource := structs.Sprite{
-		Src:  rl.NewRectangle(325, 180, 7, 25),     // weapon_bow 325 180 7 25
-		Dest: rl.NewRectangle(0, 0, 7*1.5, 25*1.5), // only using h, w for scaling
-	}
-
-	playerSwordThatShootsBows = &structs.Weapon{
-		Sprite:              swordThatShootsBowsSprite,
-		ProjectileSpriteSrc: bowArrowSpriteSource,
-
-		Obj: util.ObjFromRect(swordSprite.Dest),
-		// handle is the origin offset or the sprite
-		Handle:       structs.Point{X: swordSprite.Dest.Width * .5, Y: swordSprite.Dest.Height * .99},
-		AttackSpeed:  8,
-		Cooldown:     24,
-		IdleRotation: -30,
-		AttackRotator: func(w structs.Weapon) float32 {
-			return w.IdleRotation * -3 / float32(w.AttackSpeed) * float32(w.AttackFrame)
-		},
-		ProjectileCount:         3,
-		ProjectileSpreadDegrees: 35,
-		Projectilelength:        21,
-		ProjectileTTLFrames:     32,
-		ProjectileVelocity:      4,
-		TintColor:               rl.White,
-	}
-
-	firstPlayer.Weapon = playerSword
+	firstPlayer.EquipWeapon(swords.RegularSword())
 
 	// Test enemy orc_warrior_idle_anim 368 204 16 20 4
 	enemySprite := structs.Sprite{

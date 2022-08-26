@@ -38,6 +38,13 @@ func (w *Weapon) Move(dx, dy float64) {
 	w.Sprite.Dest.Y = util.RectFromObj(w.Obj).Y
 }
 
+func (w *Weapon) AnchoredMove(x, y float64) {
+	w.Sprite.Dest.X = float32(x)
+	w.Sprite.Dest.Y = float32(y)
+	w.Obj = util.ObjFromRect(w.Sprite.Dest)
+	w.Obj.Update()
+}
+
 func (w *Weapon) Draw(frame int, next_frame bool, offset float32) {
 	rotation := w.IdleRotation
 	if w.AttackFrame >= 0 && w.AttackRotator != nil {
