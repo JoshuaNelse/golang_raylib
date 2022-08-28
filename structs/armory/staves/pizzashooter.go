@@ -1,4 +1,4 @@
-package bows
+package staves
 
 import (
 	util "raylib/playground/game/utils"
@@ -8,23 +8,23 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-func RegularBow() *structs.Weapon {
+func PizzaShooter() *structs.Weapon {
 	s := structs.Sprite{
-		Src: rl.NewRectangle(325, 180, 7, 25), // weapon_bow 325 180 7 25
+		Src: rl.NewRectangle(324, 145, 8, 30), // weapon_red_magic_staff 324 145 8 30
 
 		Dest: rl.NewRectangle(
 			0,
 			0,
-			7*1.1,
-			25*1.1,
+			8*1.1,
+			30*1.1,
 		),
 		Texture: draw2d.Texture,
 	}
 
 	ps := structs.Sprite{
-		Src:     rl.NewRectangle(308, 186, 7, 21),     // weapon_arrow 308 186 7 21
-		Dest:    rl.NewRectangle(0, 0, 7*1.5, 21*1.5), // only using h, w for scaling
-		Texture: draw2d.Texture,
+		Src:     rl.NewRectangle(0, 0, 32, 32), // pizza slice
+		Dest:    rl.NewRectangle(0, 0, 32, 32),
+		Texture: draw2d.PizzaSlice,
 	}
 
 	return &structs.Weapon{

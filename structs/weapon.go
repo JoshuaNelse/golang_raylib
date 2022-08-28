@@ -2,7 +2,6 @@ package structs
 
 import (
 	util "raylib/playground/game/utils"
-	"raylib/playground/structs/draw2d"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/solarlune/resolv"
@@ -76,6 +75,6 @@ func (w *Weapon) Draw(frame int, next_frame bool, offset float32) {
 	dest := w.Sprite.Dest
 	dest.Y += offset
 
-	rl.DrawTexturePro(draw2d.Texture, w.Sprite.Src, dest,
+	rl.DrawTexturePro(w.Sprite.Texture, w.Sprite.Src, dest,
 		origin, rotation, w.TintColor)
 }

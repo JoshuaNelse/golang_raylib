@@ -57,7 +57,7 @@ func (e *Enemy) Draw() {
 func (e *Enemy) Hurt() {
 	e.HurtFrames = 16
 	e.Health -= 1
-	if e.Health <= 0 {
+	if e.Health <= 0 && !e.Dead {
 		e.Die()
 	}
 }

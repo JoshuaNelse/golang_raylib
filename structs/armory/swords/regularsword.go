@@ -3,6 +3,7 @@ package swords
 import (
 	util "raylib/playground/game/utils"
 	"raylib/playground/structs"
+	"raylib/playground/structs/draw2d"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -18,6 +19,7 @@ func RegularSword() *structs.Weapon {
 			10*1.35,
 			21*1.35,
 		),
+		Texture: draw2d.Texture,
 	}
 
 	return &structs.Weapon{

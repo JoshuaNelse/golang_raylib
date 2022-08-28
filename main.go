@@ -13,6 +13,8 @@ import (
 	util "raylib/playground/game/utils"
 	"raylib/playground/structs"
 	"raylib/playground/structs/armory/bows"
+	"raylib/playground/structs/armory/cannon"
+	"raylib/playground/structs/armory/staves"
 	"raylib/playground/structs/armory/swords"
 	"raylib/playground/structs/draw2d"
 	"strconv"
@@ -57,6 +59,7 @@ var (
 
 	musicPaused bool = true
 	cam         rl.Camera2D
+	mapFile     = "resources/maps/second.map"
 )
 
 type lineDrawParam struct {
@@ -83,8 +86,12 @@ func loadMap(mapFile string) {
 
 	// map dimensions
 	mapW, err = strconv.Atoi(sliced[0])
-	mapH, err = strconv.Atoi(sliced[1])
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 
+	mapH, err = strconv.Atoi(sliced[1])
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -404,6 +411,15 @@ func input() {
 		firstPlayer.EquipWeapon(bows.SwordShooter())
 	} else if rl.IsKeyPressed(rl.KeyFour) {
 		firstPlayer.EquipWeapon(swords.BowShooter())
+	} else if rl.IsKeyPressed(rl.KeyFive) {
+		firstPlayer.EquipWeapon(cannon.PeopleShooter())
+	} else if rl.IsKeyPressed(rl.KeySix) {
+		firstPlayer.EquipWeapon(staves.PizzaShooter())
+	} else if rl.IsKeyPressed(rl.KeyRightBracket) {
+		srcMap = []string{}
+		tileMap = []int{}
+		collisionMap = []string{}
+		loadMap(mapFile)
 	}
 
 }
@@ -569,8 +585,9 @@ func initialize() {
 	audioengine.InitializeAudio()
 
 	playerSprite := structs.Sprite{
-		Src:  rl.NewRectangle(128, 100, 16, 28),
-		Dest: rl.NewRectangle(285, 200, 32, 56),
+		Src:     rl.NewRectangle(128, 100, 16, 28),
+		Dest:    rl.NewRectangle(285, 200, 32, 56),
+		Texture: draw2d.Texture,
 	}
 
 	playerObj := util.ObjFromRect(playerSprite.Dest)
@@ -591,6 +608,7 @@ func initialize() {
 	enemySprite := structs.Sprite{
 		Src:        rl.NewRectangle(368, 204, 16, 24),
 		Dest:       rl.NewRectangle(250, 250, 32, 48),
+		Texture:    draw2d.Texture,
 		FrameCount: 4,
 	}
 
@@ -609,7 +627,8 @@ func initialize() {
 	enemies = append(enemies, &firstEnemy)
 
 	cam = rl.NewCamera2D(rl.NewVector2(screenWidth/2, screenHeight/2), getCameraTarget(), 0.0, 1.25)
-	loadMap("resources/maps/first.map")
+
+	loadMap(mapFile)
 	collisionengine.WorldCollisionSpace.Add(firstPlayer.Obj, enemyObj)
 }
 

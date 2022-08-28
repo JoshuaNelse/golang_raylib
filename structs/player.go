@@ -104,8 +104,9 @@ func (p *Player) Attack() []Projectile {
 			Velocity:   projectileVelocity,
 			Trajectory: projectileTrajectory,
 			Sprite: Sprite{
-				Src:  p.Weapon.ProjectileSpriteSrc.Src,
-				Dest: p.Weapon.ProjectileSpriteSrc.Dest,
+				Src:     p.Weapon.ProjectileSpriteSrc.Src,
+				Dest:    p.Weapon.ProjectileSpriteSrc.Dest,
+				Texture: p.Weapon.ProjectileSpriteSrc.Texture,
 			},
 		}
 		newProjectiles = append(newProjectiles, newProjectile)

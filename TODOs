@@ -4,13 +4,24 @@
 - make foreground calculate by player center and not top of the sprite
   - hoping this will reduce some of the strange issues with foreground objects 
 - make projectiles collide with environment
-- implement bow that shoots swords
+- Lay down an NPC (non-enemy)
+  - make interactable
+- make enemy spawn logic
+- Implement UI
+  - player health
+  - player inventory
+  - money
+- Add damage attribute to weapons
+  - Implement healing weapons
+
 
 
 
 
 # IN PROGRESS
 - break out code into modules
+- Create new map
+  - add navigation mechanism
 
 
 
@@ -36,3 +47,9 @@
     - 2 bow - DONE
   - implement velocity
   - draw arrow sprite
+- implement bow that shoots swords
+
+
+# Weapon of the week
+- staffs.pizzashooter - done :)
+  - create pizza sprite

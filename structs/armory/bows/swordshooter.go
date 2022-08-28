@@ -3,6 +3,7 @@ package bows
 import (
 	util "raylib/playground/game/utils"
 	"raylib/playground/structs"
+	"raylib/playground/structs/draw2d"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -17,11 +18,13 @@ func SwordShooter() *structs.Weapon {
 			7*1.1,
 			25*1.1,
 		),
+		Texture: draw2d.Texture,
 	}
 
 	ps := structs.Sprite{
-		Src:  rl.NewRectangle(339, 114, 10, 29),     // weapon_knight_sword 339 114 10 29
-		Dest: rl.NewRectangle(0, 0, 10*1.5, 29*1.5), // only using h, w for scaling
+		Src:     rl.NewRectangle(339, 114, 10, 29),     // weapon_knight_sword 339 114 10 29
+		Dest:    rl.NewRectangle(0, 0, 10*1.5, 29*1.5), // only using h, w for scaling
+		Texture: draw2d.Texture,
 	}
 
 	return &structs.Weapon{
