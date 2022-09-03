@@ -404,7 +404,7 @@ func input() {
 		firstPlayer.Attacking = true
 	}
 	if rl.IsKeyPressed(rl.KeyOne) {
-		firstPlayer.EquipWeapon(swords.RegularSword())
+		firstPlayer.EquipWeapon(swords.Key())
 	} else if rl.IsKeyPressed(rl.KeyTwo) {
 		firstPlayer.EquipWeapon(bows.RegularBow())
 	} else if rl.IsKeyPressed(rl.KeyThree) {
