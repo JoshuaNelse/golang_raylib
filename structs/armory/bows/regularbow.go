@@ -2,6 +2,7 @@ package bows
 
 import (
 	util "raylib/playground/game/utils"
+	pointmodel "raylib/playground/models/point-model"
 	"raylib/playground/structs"
 	"raylib/playground/structs/draw2d"
 
@@ -33,7 +34,7 @@ func RegularBow() *structs.Weapon {
 
 		Obj: util.ObjFromRect(s.Dest),
 		// handle is the origin offset for the sprite
-		Handle:       structs.Point{X: s.Dest.Width * .5, Y: s.Dest.Height * .75},
+		Handle:       pointmodel.Point{X: s.Dest.Width * .5, Y: s.Dest.Height * .75},
 		AttackSpeed:  8,
 		Cooldown:     24,
 		IdleRotation: 20,

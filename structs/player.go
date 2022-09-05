@@ -5,6 +5,7 @@ import (
 	audioengine "raylib/playground/engines/audio-engine"
 	"raylib/playground/game"
 	util "raylib/playground/game/utils"
+	pointmodel "raylib/playground/models/point-model"
 	"raylib/playground/structs/draw2d"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -21,7 +22,7 @@ type Player struct {
 	SpriteFlipped  bool
 	Obj            *resolv.Object
 	Weapon         *Weapon
-	Hand           Point
+	Hand           pointmodel.Point
 	Moving         bool
 	Attacking      bool
 	AttackCooldown int
@@ -74,7 +75,7 @@ func (p *Player) Attack() []Projectile {
 	p.Weapon.AttackFrame = 0 // find a better way to trigger animation than this.
 	p.AttackCooldown = p.Weapon.Cooldown
 
-	playerCenter := Point{
+	playerCenter := pointmodel.Point{
 		X: float32(p.Obj.X + p.Obj.W/2),
 		Y: float32(p.Obj.Y + p.Obj.H/2),
 	}

@@ -2,6 +2,7 @@ package swords
 
 import (
 	util "raylib/playground/game/utils"
+	pointmodel "raylib/playground/models/point-model"
 	"raylib/playground/structs"
 	"raylib/playground/structs/draw2d"
 
@@ -37,7 +38,7 @@ func Key() *structs.Weapon {
 		ProjectileSpriteSrc: ps,
 		Obj:                 util.ObjFromRect(s.Dest),
 		// handle is the origin offset for the sprite
-		Handle:       structs.Point{X: s.Dest.Width * .5, Y: s.Dest.Height * .85},
+		Handle:       pointmodel.Point{X: s.Dest.Width * .5, Y: s.Dest.Height * .85},
 		AttackSpeed:  4,
 		Cooldown:     24,
 		IdleRotation: -30,

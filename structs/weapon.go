@@ -2,6 +2,7 @@ package structs
 
 import (
 	util "raylib/playground/game/utils"
+	pointmodel "raylib/playground/models/point-model"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/solarlune/resolv"
@@ -12,7 +13,7 @@ type Weapon struct {
 	SpriteFlipped       bool
 	ProjectileSpriteSrc Sprite
 	Obj                 *resolv.Object
-	Handle              Point
+	Handle              pointmodel.Point
 	Reach               int
 	AttackSpeed         int
 	Cooldown            int
