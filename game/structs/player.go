@@ -4,9 +4,9 @@ import (
 	"math"
 	audioengine "raylib/playground/engines/audio-engine"
 	"raylib/playground/game"
+	"raylib/playground/game/structs/draw2d"
 	util "raylib/playground/game/utils"
 	pointmodel "raylib/playground/models/point-model"
-	"raylib/playground/structs/draw2d"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/solarlune/resolv"

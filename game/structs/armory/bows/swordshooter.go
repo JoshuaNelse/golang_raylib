@@ -1,15 +1,15 @@
 package bows
 
 import (
+	"raylib/playground/game/structs"
+	"raylib/playground/game/structs/draw2d"
 	util "raylib/playground/game/utils"
 	pointmodel "raylib/playground/models/point-model"
-	"raylib/playground/structs"
-	"raylib/playground/structs/draw2d"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-func RegularBow() *structs.Weapon {
+func SwordShooter() *structs.Weapon {
 	s := structs.Sprite{
 		Src: rl.NewRectangle(325, 180, 7, 25), // weapon_bow 325 180 7 25
 
@@ -23,8 +23,8 @@ func RegularBow() *structs.Weapon {
 	}
 
 	ps := structs.Sprite{
-		Src:     rl.NewRectangle(308, 186, 7, 21),     // weapon_arrow 308 186 7 21
-		Dest:    rl.NewRectangle(0, 0, 7*1.5, 21*1.5), // only using h, w for scaling
+		Src:     rl.NewRectangle(339, 114, 10, 29),     // weapon_knight_sword 339 114 10 29
+		Dest:    rl.NewRectangle(0, 0, 10*1.5, 29*1.5), // only using h, w for scaling
 		Texture: draw2d.Texture,
 	}
 
@@ -47,9 +47,10 @@ func RegularBow() *structs.Weapon {
 		Projectilelength:        21,
 		ProjectileTTLFrames:     32,
 		ProjectileVelocity:      8,
-		TintColor:               rl.White,
+		TintColor:               rl.Blue,
 
 		// stops the weapon from attack at creation
 		AttackFrame: -1,
 	}
+
 }

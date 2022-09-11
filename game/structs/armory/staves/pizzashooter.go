@@ -1,10 +1,10 @@
 package staves
 
 import (
+	"raylib/playground/game/structs"
+	"raylib/playground/game/structs/draw2d"
 	util "raylib/playground/game/utils"
 	pointmodel "raylib/playground/models/point-model"
-	"raylib/playground/structs"
-	"raylib/playground/structs/draw2d"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )

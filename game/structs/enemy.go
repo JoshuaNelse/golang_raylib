@@ -4,7 +4,7 @@ import (
 	"math"
 	collisionengine "raylib/playground/engines/collision-engine"
 	"raylib/playground/game"
-	"raylib/playground/structs/draw2d"
+	"raylib/playground/game/structs/draw2d"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/solarlune/resolv"

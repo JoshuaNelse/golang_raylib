@@ -1,8 +1,8 @@
 package collisionengine
 
 import (
+	texturemaps "raylib/playground/game/structs/draw2d/texture-maps"
 	mapmodel "raylib/playground/models/map-model"
-	texturemaps "raylib/playground/structs/draw2d/texture-maps"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/solarlune/resolv"

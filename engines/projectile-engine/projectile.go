@@ -1,5 +1,5 @@
 package projectileengine
 
-import "raylib/playground/structs"
+import "raylib/playground/game/structs"
 
 var Projectiles []structs.Projectile
