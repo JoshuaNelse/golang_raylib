@@ -1,8 +1,8 @@
-package structs
+package model
 
 import (
+	pointmodel "raylib/playground/director-models/point-model"
 	util "raylib/playground/game/utils"
-	pointmodel "raylib/playground/models/point-model"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/solarlune/resolv"

@@ -1,16 +1,16 @@
 package swords
 
 import (
-	"raylib/playground/game/structs"
-	"raylib/playground/game/structs/draw2d"
+	pointmodel "raylib/playground/director-models/point-model"
 	util "raylib/playground/game/utils"
-	pointmodel "raylib/playground/models/point-model"
+	data2 "raylib/playground/model"
+	"raylib/playground/model/draw2d"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-func RegularSword() *structs.Weapon {
-	s := structs.Sprite{
+func RegularSword() *data2.Weapon {
+	s := data2.Sprite{
 		// TODO make some file that handles this mapping to abstract this out.
 		Src: rl.NewRectangle(339, 26, 10, 21), // weapon_red_gem_sword
 
@@ -23,7 +23,7 @@ func RegularSword() *structs.Weapon {
 		Texture: draw2d.Texture,
 	}
 
-	return &structs.Weapon{
+	return &data2.Weapon{
 		Sprite: s,
 		Obj:    util.ObjFromRect(s.Dest),
 		// handle is the origin offset for the sprite
@@ -31,7 +31,7 @@ func RegularSword() *structs.Weapon {
 		AttackSpeed:  8,
 		Cooldown:     24,
 		IdleRotation: -30,
-		AttackRotator: func(w structs.Weapon) float32 {
+		AttackRotator: func(w data2.Weapon) float32 {
 			return w.IdleRotation * -3 / float32(w.AttackSpeed) * float32(w.AttackFrame)
 		},
 		ProjectileCount:         3,

@@ -1,16 +1,16 @@
 package swords
 
 import (
-	"raylib/playground/game/structs"
-	"raylib/playground/game/structs/draw2d"
+	pointmodel "raylib/playground/director-models/point-model"
 	util "raylib/playground/game/utils"
-	pointmodel "raylib/playground/models/point-model"
+	data2 "raylib/playground/model"
+	"raylib/playground/model/draw2d"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-func Key() *structs.Weapon {
-	s := structs.Sprite{
+func Key() *data2.Weapon {
+	s := data2.Sprite{
 		// TODO make some file that handles this mapping to abstract this out.
 		Src: rl.NewRectangle(0, 0, 32, 32), // key shaped sword
 		Dest: rl.NewRectangle(
@@ -22,7 +22,7 @@ func Key() *structs.Weapon {
 		Texture: draw2d.KeyShapedSword,
 	}
 
-	ps := structs.Sprite{
+	ps := data2.Sprite{
 		Src: rl.NewRectangle(0, 0, 32, 32), // key shaped sword
 		Dest: rl.NewRectangle(
 			0,
@@ -33,7 +33,7 @@ func Key() *structs.Weapon {
 		Texture: draw2d.KeyShapedSword,
 	}
 
-	return &structs.Weapon{
+	return &data2.Weapon{
 		Sprite:              s,
 		ProjectileSpriteSrc: ps,
 		Obj:                 util.ObjFromRect(s.Dest),
@@ -42,7 +42,7 @@ func Key() *structs.Weapon {
 		AttackSpeed:  4,
 		Cooldown:     24,
 		IdleRotation: -30,
-		AttackRotator: func(w structs.Weapon) float32 {
+		AttackRotator: func(w data2.Weapon) float32 {
 			return w.IdleRotation * -3 / float32(w.AttackSpeed) * float32(w.AttackFrame)
 		},
 		ProjectileCount:         3,

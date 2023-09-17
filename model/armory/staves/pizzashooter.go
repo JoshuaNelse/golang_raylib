@@ -1,34 +1,34 @@
-package bows
+package staves
 
 import (
-	"raylib/playground/game/structs"
-	"raylib/playground/game/structs/draw2d"
+	pointmodel "raylib/playground/director-models/point-model"
 	util "raylib/playground/game/utils"
-	pointmodel "raylib/playground/models/point-model"
+	data2 "raylib/playground/model"
+	"raylib/playground/model/draw2d"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-func SwordShooter() *structs.Weapon {
-	s := structs.Sprite{
-		Src: rl.NewRectangle(325, 180, 7, 25), // weapon_bow 325 180 7 25
+func PizzaShooter() *data2.Weapon {
+	s := data2.Sprite{
+		Src: rl.NewRectangle(324, 145, 8, 30), // weapon_red_magic_staff 324 145 8 30
 
 		Dest: rl.NewRectangle(
 			0,
 			0,
-			7*1.1,
-			25*1.1,
+			8*1.1,
+			30*1.1,
 		),
 		Texture: draw2d.Texture,
 	}
 
-	ps := structs.Sprite{
-		Src:     rl.NewRectangle(339, 114, 10, 29),     // weapon_knight_sword 339 114 10 29
-		Dest:    rl.NewRectangle(0, 0, 10*1.5, 29*1.5), // only using h, w for scaling
-		Texture: draw2d.Texture,
+	ps := data2.Sprite{
+		Src:     rl.NewRectangle(0, 0, 32, 32), // pizza slice
+		Dest:    rl.NewRectangle(0, 0, 32, 32),
+		Texture: draw2d.PizzaSlice,
 	}
 
-	return &structs.Weapon{
+	return &data2.Weapon{
 		Sprite:              s,
 		ProjectileSpriteSrc: ps,
 
@@ -38,7 +38,7 @@ func SwordShooter() *structs.Weapon {
 		AttackSpeed:  8,
 		Cooldown:     24,
 		IdleRotation: 20,
-		AttackRotator: func(w structs.Weapon) float32 {
+		AttackRotator: func(w data2.Weapon) float32 {
 			// TODO make it follow mouse -- for now make it 0
 			return 0
 		},
@@ -47,10 +47,9 @@ func SwordShooter() *structs.Weapon {
 		Projectilelength:        21,
 		ProjectileTTLFrames:     32,
 		ProjectileVelocity:      8,
-		TintColor:               rl.Blue,
+		TintColor:               rl.White,
 
 		// stops the weapon from attack at creation
 		AttackFrame: -1,
 	}
-
 }

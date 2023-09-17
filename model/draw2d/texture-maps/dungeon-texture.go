@@ -1,7 +1,7 @@
 package texturemaps
 
 import (
-	pointmodel "raylib/playground/models/point-model"
+	pointmodel "raylib/playground/director-models/point-model"
 )
 
 // TODO move this out - not sure where yet

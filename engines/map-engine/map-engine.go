@@ -1,11 +1,11 @@
-package mapengine
+package map_engine
 
 import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	collisionengine "raylib/playground/engines/collision-engine"
-	mapmodel "raylib/playground/models/map-model"
+	"raylib/playground/director-models/map-model"
+	"raylib/playground/engines/collision-engine"
 	"strconv"
 	"strings"
 
@@ -13,7 +13,7 @@ import (
 	"github.com/solarlune/resolv"
 )
 
-func LoadMap(mapFile string, texture rl.Texture2D) *mapmodel.MapModel {
+func LoadMap(mapFile string, texture rl.Texture2D) *map_model.MapModel {
 	fmt.Println("Attempting to load map:", mapFile)
 
 	file, err := ioutil.ReadFile(mapFile)
@@ -37,15 +37,15 @@ func LoadMap(mapFile string, texture rl.Texture2D) *mapmodel.MapModel {
 		os.Exit(1)
 	}
 
-	srcTileDimension := mapmodel.TileDimension{Width: 16, Height: 16}
-	destTileDimension := mapmodel.TileDimension{Width: 32, Height: 32}
+	srcTileDimension := map_model.TileDimension{Width: 16, Height: 16}
+	destTileDimension := map_model.TileDimension{Width: 32, Height: 32}
 
 	//pixel level collision
 	spaceWidth := mapW * int(2*destTileDimension.Width)
 	spaceHeight := mapH * int(2*destTileDimension.Height)
 	spaceCellWidth := 1
 	spaceCellHeight := 1
-	collisionengine.WorldCollisionSpace = resolv.NewSpace(spaceWidth, spaceHeight, spaceCellWidth, spaceCellHeight)
+	collision_engine.WorldCollisionSpace = resolv.NewSpace(spaceWidth, spaceHeight, spaceCellWidth, spaceCellHeight)
 
 	var tileMap []int
 	var srcMap []string
@@ -65,7 +65,7 @@ func LoadMap(mapFile string, texture rl.Texture2D) *mapmodel.MapModel {
 		}
 	}
 
-	return &mapmodel.MapModel{
+	return &map_model.MapModel{
 		Width:             mapW,
 		Height:            mapH,
 		SrcMap:            srcMap,

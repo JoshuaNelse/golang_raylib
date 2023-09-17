@@ -1,10 +1,11 @@
-package audioengine
+package audio_engine
 
 import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 var Music rl.Music
+var musicPaused = false
 
 func initializeMusic() {
 	Music = rl.LoadMusicStream("resources/audio/tracks/ting ting.mp3")
@@ -17,6 +18,15 @@ func playMusic(m rl.Music) {
 
 func unloadMusic() {
 	rl.UnloadMusicStream(Music)
+}
+
+func ToggleMusic() {
+	musicPaused = !musicPaused
+	if musicPaused {
+		PauseMusicStream()
+	} else {
+		ResumeMusicStream()
+	}
 }
 
 func UpdateMusicStream() {

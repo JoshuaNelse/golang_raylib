@@ -1,16 +1,16 @@
 package bows
 
 import (
-	"raylib/playground/game/structs"
-	"raylib/playground/game/structs/draw2d"
+	pointmodel "raylib/playground/director-models/point-model"
 	util "raylib/playground/game/utils"
-	pointmodel "raylib/playground/models/point-model"
+	data2 "raylib/playground/model"
+	"raylib/playground/model/draw2d"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-func RegularBow() *structs.Weapon {
-	s := structs.Sprite{
+func RegularBow() *data2.Weapon {
+	s := data2.Sprite{
 		Src: rl.NewRectangle(325, 180, 7, 25), // weapon_bow 325 180 7 25
 
 		Dest: rl.NewRectangle(
@@ -22,13 +22,13 @@ func RegularBow() *structs.Weapon {
 		Texture: draw2d.Texture,
 	}
 
-	ps := structs.Sprite{
+	ps := data2.Sprite{
 		Src:     rl.NewRectangle(308, 186, 7, 21),     // weapon_arrow 308 186 7 21
 		Dest:    rl.NewRectangle(0, 0, 7*1.5, 21*1.5), // only using h, w for scaling
 		Texture: draw2d.Texture,
 	}
 
-	return &structs.Weapon{
+	return &data2.Weapon{
 		Sprite:              s,
 		ProjectileSpriteSrc: ps,
 
@@ -38,7 +38,7 @@ func RegularBow() *structs.Weapon {
 		AttackSpeed:  8,
 		Cooldown:     24,
 		IdleRotation: 20,
-		AttackRotator: func(w structs.Weapon) float32 {
+		AttackRotator: func(w data2.Weapon) float32 {
 			// TODO make it follow mouse -- for now make it 0
 			return 0
 		},

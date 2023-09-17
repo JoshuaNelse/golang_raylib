@@ -1,4 +1,4 @@
-package audioengine
+package audio_engine
 
 import (
 	rl "github.com/gen2brain/raylib-go/raylib"

@@ -1,13 +1,11 @@
-package structs
+package model
 
 import (
-	"math"
-	collisionengine "raylib/playground/engines/collision-engine"
-	"raylib/playground/game"
-	"raylib/playground/game/structs/draw2d"
-
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/solarlune/resolv"
+	"math"
+	collisionengine "raylib/playground/engines/collision-engine"
+	"raylib/playground/model/draw2d"
 )
 
 type Enemy struct {
@@ -21,9 +19,9 @@ type Enemy struct {
 	TintColor   rl.Color
 }
 
-func (e *Enemy) Draw() {
+func (e *Enemy) Draw(frameCount int32) {
 
-	if game.FrameCount%8 == 1 && !e.Dead {
+	if frameCount%8 == 1 && !e.Dead {
 		e.Sprite.Frame++
 	}
 	if e.Sprite.Frame > 3 {

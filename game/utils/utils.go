@@ -7,11 +7,12 @@ import (
 	"github.com/solarlune/resolv"
 )
 
+// GetPlayerToMouseAngleDegrees
 /*
-returns degrees mouse is from player
-rise/run seem to be flipped because x/y are 90 degrees off in game engines
+	returns degrees mouse is from player
+	rise/run seem to be flipped because x/y are 90 degrees off in game engines
 */
-func GetPlayerToMouseAngleDegress() float32 {
+func GetPlayerToMouseAngleDegrees() float32 {
 	rise := float64(rl.GetMouseX()) - float64(rl.GetScreenWidth()/2)
 	run := float64(rl.GetMouseY()) - float64(rl.GetScreenHeight()/2)
 	angle := float32(RadiansToDegrees(math.Atan(rise / run)))
@@ -41,10 +42,11 @@ func RectFromObj(obj *resolv.Object) rl.Rectangle {
 	return rl.NewRectangle(x+w, y+h, w, h)
 }
 
+// FlipLeft
 /*
-Sprite image utility - if we don't have assest that face both
-direction we can flip them programmatically
-example: b -> d
+	Sprite image utility - if we don't have assests that face both
+	direction we can flip them programmatically
+	example: b -> d
 */
 func FlipLeft(src *rl.Rectangle) {
 	if !(src.Width < 0) {
@@ -52,10 +54,11 @@ func FlipLeft(src *rl.Rectangle) {
 	}
 }
 
+// FlipRight
 /*
-Sprite image utility - if we don't have assest that face both
-direction we can flip them programmatically
-example: d -> b
+	Sprite image utility - if we don't have assests that face both
+	direction we can flip them programmatically
+	example: d -> b
 */
 func FlipRight(src *rl.Rectangle) {
 	if !(src.Width > 0) {

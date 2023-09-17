@@ -1,4 +1,4 @@
-package structs
+package model
 
 import (
 	rl "github.com/gen2brain/raylib-go/raylib"

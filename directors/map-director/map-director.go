@@ -1,18 +1,18 @@
-package mapdirector
+package map_director
 
 import (
-	collisionengine "raylib/playground/engines/collision-engine"
-	drawworldengine "raylib/playground/engines/draw-world-engine"
-	mapengine "raylib/playground/engines/map-engine"
+	"raylib/playground/engines/collision-engine"
+	"raylib/playground/engines/draw-world-engine"
+	"raylib/playground/engines/map-engine"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 func LoadMap(mapFile string, texture rl.Texture2D) {
 
-	mapModel := mapengine.LoadMap(mapFile, texture)
-	collisionMapDebug := collisionengine.SetWorldSpaceCollideables(mapModel)
+	mapModel := map_engine.LoadMap(mapFile, texture)
+	collisionMapDebug := collision_engine.SetWorldSpaceCollideables(mapModel)
 
-	drawworldengine.SetCurrentMap(mapModel)
-	drawworldengine.SetCollisionMapDebug(collisionMapDebug)
+	draw_world_engine.SetCurrentMap(mapModel)
+	draw_world_engine.SetCollisionMapDebug(collisionMapDebug)
 }

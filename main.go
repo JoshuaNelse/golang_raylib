@@ -3,104 +3,22 @@ package main
 import (
 	"fmt"
 	"math"
-	mapDirector "raylib/playground/directors/map-director"
-	audioEngine "raylib/playground/engines/audio-engine"
-	collisionEngine "raylib/playground/engines/collision-engine"
-	drawWorldEngine "raylib/playground/engines/draw-world-engine"
-	projectileEngine "raylib/playground/engines/projectile-engine"
+	"raylib/playground/directors/map-director"
+	"raylib/playground/engines/audio-engine"
+	"raylib/playground/engines/collision-engine"
+	"raylib/playground/engines/projectile-engine"
 	"raylib/playground/game"
-	"raylib/playground/game/structs"
-	"raylib/playground/game/structs/armory/bows"
-	"raylib/playground/game/structs/armory/cannon"
-	"raylib/playground/game/structs/armory/staves"
-	"raylib/playground/game/structs/armory/swords"
-	"raylib/playground/game/structs/draw2d"
 	util "raylib/playground/game/utils"
-	pointModel "raylib/playground/models/point-model"
+	"raylib/playground/model"
+	"raylib/playground/model/draw2d"
 	"strings"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 var (
-	bkgColor = rl.NewColor(147, 211, 196, 255)
-
-	enemies []*structs.Enemy
-
-	firstPlayer structs.Player
-
 	playerSpeed float32 = 3
-	playerUp    bool
-	playerDown  bool
-	playerRight bool
-	playerLeft  bool
-
-	firstEnemy structs.Enemy
-
-	musicPaused bool = true
-	cam         rl.Camera2D
-	mapFile     = "resources/maps/first.map"
 )
-
-func getCameraTarget() rl.Vector2 {
-	playerCenterX := float32(firstPlayer.Obj.X + firstPlayer.Obj.W/2)
-	playerCenterY := float32(firstPlayer.Obj.Y + firstPlayer.Obj.H/2)
-	return rl.NewVector2(playerCenterX, playerCenterY)
-}
-
-func input() {
-	/*
-		Thinking about making an inputDiretor module that checks for all input and returns
-		A map of input managers that need to be invoked and their corresponding inputs to manage
-	*/
-	if rl.IsKeyDown(rl.KeyW) || rl.IsKeyDown(rl.KeyUp) {
-		firstPlayer.Moving = true
-		playerUp = true
-	}
-	if rl.IsKeyDown(rl.KeyS) || rl.IsKeyDown(rl.KeyDown) {
-		firstPlayer.Moving = true
-		playerDown = true
-	}
-	if rl.IsKeyDown(rl.KeyA) || rl.IsKeyDown(rl.KeyLeft) {
-		firstPlayer.Moving = true
-		playerLeft = true
-	}
-	if rl.IsKeyDown(rl.KeyD) || rl.IsKeyDown(rl.KeyRight) {
-		firstPlayer.Moving = true
-		playerRight = true
-	}
-	if rl.IsKeyPressed(rl.KeyQ) {
-		musicPaused = !musicPaused
-	}
-	if rl.IsKeyPressed(rl.KeyBackSlash) {
-		game.DebugMode = !game.DebugMode
-	}
-	if rl.GetMouseWheelMove() != 0 {
-		mouseMove := rl.GetMouseWheelMove()
-		if mouseMove > 0 && cam.Zoom < 2.0 {
-			cam.Zoom = float32(math.Min(2.0, float64(cam.Zoom+float32(mouseMove)/15)))
-		} else if mouseMove < 0 && cam.Zoom > .75 {
-			cam.Zoom = float32(math.Max(.75, float64(cam.Zoom+float32(mouseMove)/15)))
-		}
-	}
-	if rl.IsMouseButtonDown(rl.MouseLeftButton) {
-		firstPlayer.Attacking = true
-	}
-	if rl.IsKeyPressed(rl.KeyOne) {
-		firstPlayer.EquipWeapon(staves.Keytar())
-	} else if rl.IsKeyPressed(rl.KeyTwo) {
-		firstPlayer.EquipWeapon(bows.RegularBow())
-	} else if rl.IsKeyPressed(rl.KeyThree) {
-		firstPlayer.EquipWeapon(bows.SwordShooter())
-	} else if rl.IsKeyPressed(rl.KeyFour) {
-		firstPlayer.EquipWeapon(swords.BowShooter())
-	} else if rl.IsKeyPressed(rl.KeyFive) {
-		firstPlayer.EquipWeapon(cannon.PeopleShooter())
-	} else if rl.IsKeyPressed(rl.KeySix) {
-		firstPlayer.EquipWeapon(staves.PizzaShooter())
-	}
-
-}
 
 type Line struct {
 	start rl.Vector2
@@ -122,29 +40,29 @@ func linesFromRect(rect rl.Rectangle) []Line {
 func update() {
 	game.Running = !rl.WindowShouldClose()
 
-	if firstPlayer.Moving {
+	if game.MainPlayer.Moving {
 		// used for collision check
 		dx := 0.0
 		dy := 0.0
 
-		if playerUp {
+		if game.PlayerUp {
 			dy -= float64(playerSpeed)
 		}
-		if playerDown {
+		if game.PlayerDown {
 			dy += float64(playerSpeed)
 		}
-		if playerRight {
-			util.FlipRight(&firstPlayer.Sprite.Src)
+		if game.PlayerRight {
+			util.FlipRight(&game.MainPlayer.Sprite.Src)
 			dx += float64(playerSpeed)
-			firstPlayer.SpriteFlipped = false
+			game.MainPlayer.SpriteFlipped = false
 		}
-		if playerLeft {
-			util.FlipLeft(&firstPlayer.Sprite.Src)
+		if game.PlayerLeft {
+			util.FlipLeft(&game.MainPlayer.Sprite.Src)
 			dx -= float64(playerSpeed)
-			firstPlayer.SpriteFlipped = true
+			game.MainPlayer.SpriteFlipped = true
 		}
 		// check for collisions
-		if collision := firstPlayer.Obj.Check(dx, dy, "nav"); collision != nil {
+		if collision := game.MainPlayer.Obj.Check(dx, dy, "nav"); collision != nil {
 
 			fmt.Println("We hit a door!")
 
@@ -154,39 +72,39 @@ func update() {
 				}
 			}
 
-			mapDirector.LoadMap("resources/maps/second.map", draw2d.Texture)
-			firstPlayer.Obj.Space.Remove(firstPlayer.Obj)
-			collisionEngine.WorldCollisionSpace.Add(firstPlayer.Obj)
+			map_director.LoadMap("resources/maps/second.map", draw2d.Texture)
+			game.MainPlayer.Obj.Space.Remove(game.MainPlayer.Obj)
+			collision_engine.WorldCollisionSpace.Add(game.MainPlayer.Obj)
 
 		}
-		if collision := firstPlayer.Obj.Check(0, dy, "env"); collision != nil {
+		if collision := game.MainPlayer.Obj.Check(0, dy, "env"); collision != nil {
 			//fmt.Println("Y axis collision happened: ", collision)
-			// hueristically stop movement on collision because the other way is buggy
+			// heuristically stop movement on collision because the other way is buggy
 			dy = 0
 		}
-		if collision := firstPlayer.Obj.Check(dx, 0, "env"); collision != nil {
+		if collision := game.MainPlayer.Obj.Check(dx, 0, "env"); collision != nil {
 			//fmt.Println("X axis collision happened: ", collision)
-			// hueristically stop movement on collision because the other way is buggy
+			// heuristically stop movement on collision because the other way is buggy
 			dx = 0
 		}
-		if collision := firstPlayer.Obj.Check(dx, dy, "enemy"); collision != nil {
+		if collision := game.MainPlayer.Obj.Check(dx, dy, "enemy"); collision != nil {
 			dx /= 4
 			dy /= 4
 		}
-		firstPlayer.Move(dx, dy)
+		game.MainPlayer.Move(dx, dy)
 	}
 
-	if firstPlayer.AttackCooldown > 0 {
-		firstPlayer.AttackCooldown--
-		firstPlayer.Attacking = false
+	if game.MainPlayer.AttackCooldown > 0 {
+		game.MainPlayer.AttackCooldown--
+		game.MainPlayer.Attacking = false
 	}
-	if firstPlayer.Attacking {
-		projectileEngine.Projectiles = append(projectileEngine.Projectiles, firstPlayer.Attack()...)
+	if game.MainPlayer.Attacking {
+		projectile_engine.Projectiles = append(projectile_engine.Projectiles, game.MainPlayer.Attack()...)
 	}
 
-	var nextFrameProjectiles []structs.Projectile
+	var nextFrameProjectiles []model.Projectile
 
-	for _, p := range projectileEngine.Projectiles {
+	for _, p := range projectile_engine.Projectiles {
 		if p.Ttl > 0 {
 			var collision bool
 			p.Ttl--
@@ -213,7 +131,7 @@ func update() {
 				p.End.X += dx
 				p.End.Y += dy
 			}
-			for _, e := range enemies {
+			for _, e := range game.Enemies {
 				for _, line := range linesFromRect(util.RectFromObj(e.Obj)) {
 					var collisionPoint *rl.Vector2
 					collision = rl.CheckCollisionLines(p.Start, p.End, line.start, line.end, collisionPoint)
@@ -233,113 +151,31 @@ func update() {
 			// If TTL not > 0 then let this projectile "fade away"
 		}
 	}
-	projectileEngine.Projectiles = nextFrameProjectiles
+	projectile_engine.Projectiles = nextFrameProjectiles
 
-	var survivingEnemies []*structs.Enemy
-	for _, e := range enemies {
+	var survivingEnemies []*model.Enemy
+	for _, e := range game.Enemies {
 		if !e.Dead || e.DeathFrames > 0 {
 			survivingEnemies = append(survivingEnemies, e)
 		}
 	}
-	enemies = survivingEnemies
+	game.Enemies = survivingEnemies
 
-	game.FrameCount++
+	audio_engine.UpdateMusicStream()
+	game.UpdateCameraTargetToPlayerLocation()
 
-	audioEngine.UpdateMusicStream()
-	if musicPaused {
-		audioEngine.PauseMusicStream()
-	} else {
-		audioEngine.ResumeMusicStream()
-	}
-
-	cam.Target = getCameraTarget()
-
-	playerUp, playerDown, playerRight, playerLeft = false, false, false, false
-}
-
-func render() {
-	rl.BeginDrawing()
-	rl.ClearBackground(bkgColor)
-	rl.BeginMode2D(cam)
-	drawWorldEngine.DrawScene()
-
-	rl.EndMode2D()
-	drawWorldEngine.DrawUI()
-	rl.EndDrawing()
-}
-
-func initialize() {
-	game.Initialize(true)
-
-	draw2d.InitTexture()
-	audioEngine.InitializeAudio()
-
-	playerSprite := structs.Sprite{
-		Src:     rl.NewRectangle(128, 100, 16, 28),
-		Dest:    rl.NewRectangle(285, 200, 32, 56),
-		Texture: draw2d.Texture,
-	}
-
-	playerObj := util.ObjFromRect(playerSprite.Dest)
-	playerObj.H *= .6
-
-	firstPlayer = structs.Player{
-		Sprite: playerSprite,
-		Obj:    playerObj,
-		Hand:   pointModel.Point{X: float32(playerObj.W) * .5, Y: float32(playerObj.H) * .94},
-	}
-
-	firstPlayer.Sprite.Dest.X = util.RectFromObj(firstPlayer.Obj).X
-	firstPlayer.Sprite.Dest.Y = util.RectFromObj(firstPlayer.Obj).Y
-	firstPlayer.Obj.AddTags("Player")
-	firstPlayer.EquipWeapon(swords.RegularSword())
-
-	drawWorldEngine.SetPlayer(&firstPlayer)
-
-	// Test enemy orc_warrior_idle_anim 368 204 16 20 4
-	enemySprite := structs.Sprite{
-		Src:        rl.NewRectangle(368, 204, 16, 24),
-		Dest:       rl.NewRectangle(250, 250, 32, 48),
-		Texture:    draw2d.Texture,
-		FrameCount: 4,
-	}
-
-	enemyObj := util.ObjFromRect(enemySprite.Dest)
-	enemyObj.Y += enemyObj.H * .2
-	enemyObj.H *= .7
-	enemyObj.X += enemyObj.W * .2
-	enemyObj.W *= .8
-	enemyObj.AddTags("enemy")
-	firstEnemy = structs.Enemy{
-		Sprite:    enemySprite,
-		Obj:       enemyObj,
-		Health:    12,
-		MaxHealth: 12,
-	}
-	enemies = append(enemies, &firstEnemy)
-	drawWorldEngine.SetEnemies(&enemies)
-
-	cam = rl.NewCamera2D(rl.NewVector2(game.ScreenWidth/2, game.ScreenHeight/2), getCameraTarget(), 0.0, 1.25)
-
-	mapDirector.LoadMap(mapFile, draw2d.Texture)
-	collisionEngine.WorldCollisionSpace.Add(firstPlayer.Obj, enemyObj)
-}
-
-func quit() {
-	draw2d.UnloadTexture()
-	audioEngine.UnloadAudioComponents()
-	rl.CloseWindow()
+	game.PlayerUp, game.PlayerDown, game.PlayerRight, game.PlayerLeft = false, false, false, false
 }
 
 func main() {
 
-	initialize()
+	game.Initialize(true)
 
 	// Each Frame
 	for game.Running {
-		input()
+		game.ReadPlayerInputs()
 		update()
-		render()
+		game.Render()
 	}
-	quit()
+	game.Quit()
 }

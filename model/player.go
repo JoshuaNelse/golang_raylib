@@ -1,12 +1,11 @@
-package structs
+package model
 
 import (
 	"math"
+	pointmodel "raylib/playground/director-models/point-model"
 	audioengine "raylib/playground/engines/audio-engine"
-	"raylib/playground/game"
-	"raylib/playground/game/structs/draw2d"
 	util "raylib/playground/game/utils"
-	pointmodel "raylib/playground/models/point-model"
+	"raylib/playground/model/draw2d"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/solarlune/resolv"
@@ -40,8 +39,8 @@ func (p *Player) Move(dx, dy float64) {
 	p.Weapon.AnchoredMove(ax, ay)
 }
 
-func (p *Player) Draw() {
-	if game.FrameCount%8 == 1 {
+func (p *Player) Draw(frameCount int32) {
+	if frameCount%8 == 1 {
 		p.Sprite.Frame++
 	}
 	if p.Sprite.Frame > 3 {
@@ -66,7 +65,7 @@ func (p *Player) Draw() {
 	p.Weapon.SpriteFlipped = p.SpriteFlipped
 	p.Moving = false
 	rl.DrawTexturePro(draw2d.Texture, p.Sprite.Src, p.Sprite.Dest, rl.NewVector2(p.Sprite.Dest.Width, p.Sprite.Dest.Height), 0, rl.White)
-	updateFrame := game.FrameCount%8 == 0
+	updateFrame := frameCount%8 == 0
 	p.Weapon.Draw(p.Sprite.Frame, updateFrame, weaponOffset)
 }
 
@@ -80,7 +79,7 @@ func (p *Player) Attack() []Projectile {
 		Y: float32(p.Obj.Y + p.Obj.H/2),
 	}
 	rl.DrawCircleLines(int32(playerCenter.X), int32(playerCenter.Y), 32, rl.Green)
-	angle := util.GetPlayerToMouseAngleDegress()
+	angle := util.GetPlayerToMouseAngleDegrees()
 
 	// TODO use weapon attributes in the future to determine this logic
 	projectileCount := p.Weapon.ProjectileCount
