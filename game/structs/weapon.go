@@ -50,8 +50,9 @@ func (w *Weapon) Draw(frame int, next_frame bool, offset float32) {
 	if w.AttackFrame >= 0 && w.AttackRotator != nil {
 		rotation = w.AttackRotator(*w)
 		w.AttackFrame++
+
 		if w.AttackFrame >= w.AttackSpeed {
-			w.AttackFrame = -1 // need to find a better way to manage attack animations
+			w.AttackFrame = -1 // setting to -1 to symbolize attack is finished animating
 			w.Move(0, 0)       // recenter weapon after attack animation
 		}
 

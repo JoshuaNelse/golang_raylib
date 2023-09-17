@@ -31,11 +31,13 @@ var (
 		"f": FloorTileMap,
 		"w": WallTileMap,
 		"d": DecorTileMap,
+		"n": NavigationTileMap,
 	}
 	CollisionTileOffsetMap = map[string]CollisionOffset{
 		"+": {1, 1, 1, 1},
 		".": {0, 0, 0, 0}, // probably more efficient to just skip writting a collision here
 		"d": {L: .8, R: .8, T: .3, B: 1},
+		"@": {1, 1, 1, 1},
 	}
 	EmptyTileMap = map[int]pointmodel.Point{
 		0: {X: 0, Y: 0},
@@ -95,5 +97,8 @@ var (
 		13: {X: 80, Y: 80},  // column_top 80 80 16 16
 		14: {X: 80, Y: 96},  // column_mid 80 96 16 16
 		15: {X: 80, Y: 112}, // coulmn_base 80 112 16 16
+	}
+	NavigationTileMap = map[int]pointmodel.Point{
+		1: {X: 304, Y: 288}, // chest_empty_open_anim 304 288 16 16 3
 	}
 )

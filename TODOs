@@ -13,8 +13,8 @@
   - money
 - Add damage attribute to weapons
   - Implement healing weapons
-
-
+- some strange bug with weapon rotation breaking handle logic
+  - see keytar with rotation set to anything other than zero (try 90)
 
 
 
@@ -22,7 +22,6 @@
 - break out code into modules
 - Create new map
   - add navigation mechanism
-
 
 
 
@@ -53,3 +52,5 @@
 # Weapon of the week
 - staffs.pizzashooter - done :)
   - create pizza sprite
+- Keytar
+  - stun enemies with beautiful music

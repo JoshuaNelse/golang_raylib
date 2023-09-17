@@ -10,6 +10,8 @@ var Texture rl.Texture2D
 var CannonTexture rl.Texture2D
 var PizzaSlice rl.Texture2D
 var KeyShapedSword rl.Texture2D
+var Keytar rl.Texture2D
+var MusicNote rl.Texture2D
 
 // TODO load textures but store reference in list to unload at program close
 func InitTexture() rl.Texture2D {
@@ -23,6 +25,8 @@ func InitTexture() rl.Texture2D {
 		CannonTexture = rl.LoadTexture("resources/sprites/cannon_sprite.png")
 		PizzaSlice = rl.LoadTexture("resources/sprites/pizza_slice.png")
 		KeyShapedSword = rl.LoadTexture("resources/sprites/key_shaped_blade.png")
+		Keytar = rl.LoadTexture("resources/sprites/keytar.png")
+		MusicNote = rl.LoadTexture("resources/sprites/music_note.png")
 
 	} else {
 		fmt.Println("Not loading texture!")
@@ -35,4 +39,6 @@ func UnloadTexture() {
 	rl.UnloadTexture(CannonTexture)
 	rl.UnloadTexture(PizzaSlice)
 	rl.UnloadTexture(KeyShapedSword)
+	rl.UnloadTexture(Keytar)
+	rl.UnloadTexture(MusicNote)
 }

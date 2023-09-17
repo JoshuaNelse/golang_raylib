@@ -1,5 +1,7 @@
-github.com/gen2brain/raylib-go/raylib v0.0.0-20220702153720-2ba84634ed1e h1:e/GRIyVh+q0SSASTNZ7Ns/mfG4TCb+cvVCFow2es42M=
-github.com/gen2brain/raylib-go/raylib v0.0.0-20220702153720-2ba84634ed1e/go.mod h1:+NbsqGlEQqGqrsgJFF5Yj2dkvn0ML2SQb8RqM2hJsPU=
+github.com/gen2brain/raylib-go/raygui v0.0.0-20230826160040-f770ca098119 h1:x2S4giOQoJv6L7OKvgyN7EhqOPVbKT3prE23Bho96FQ=
+github.com/gen2brain/raylib-go/raygui v0.0.0-20230826160040-f770ca098119/go.mod h1:uYchFLZ2wwfI+gRV8i0qHk6DKk5ZL/6VNrY/Nmzw5Ps=
+github.com/gen2brain/raylib-go/raylib v0.0.0-20230621091943-a6644da2433f h1:erUJFP3XPbdiOAxcixPObRpkGMcMyGo5PzG2890hZSo=
+github.com/gen2brain/raylib-go/raylib v0.0.0-20230621091943-a6644da2433f/go.mod h1:AwtGA3aTtYdezNxEVbfchaLw/z+CuRDh2Mlxy0FbBro=
 github.com/kvartborg/vector v0.0.0-20200419093813-2cba0cabb4f0 h1:v8lWpj5957KtDMKu+xQtlu6G3ZoZR6Tn9bsfZCRG5Xw=
 github.com/kvartborg/vector v0.0.0-20200419093813-2cba0cabb4f0/go.mod h1:GAX7tMJqXx9fB1BrsTWPOXy6IBRX+J461BffVPAdpwo=
 github.com/solarlune/resolv v0.5.1 h1:Ul6PAs/zaxiMUOEYz1Z6VeUj5k3CDcWMvSh+kivybDY=

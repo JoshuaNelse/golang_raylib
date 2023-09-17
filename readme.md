@@ -15,4 +15,4 @@
     - 3 bow that shoots swords
     - 4 honorary sword that shoots bows
 - pause/start music: q
-- turn debug mode on/off: \
+- turn debug mode on/off: 

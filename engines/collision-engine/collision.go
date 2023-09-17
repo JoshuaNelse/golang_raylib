@@ -1,6 +1,7 @@
 package collisionengine
 
 import (
+	"fmt"
 	texturemaps "raylib/playground/game/structs/draw2d/texture-maps"
 	mapmodel "raylib/playground/models/map-model"
 
@@ -25,6 +26,7 @@ func SetWorldSpaceCollideables(currentMap *mapmodel.MapModel) []rl.Rectangle {
 		if col == "." {
 			continue
 		}
+
 		x := tileDest.Width * float32(i%currentMap.Width)  // 6 % 5 means x column 1
 		y := tileDest.Height * float32(i/currentMap.Width) // 6 % 5 means y row of 1
 		oX, oY, oW, oH := texturemaps.CollisionTileOffsetMap[col].GetTileCollisionOffset(x, y, tileDest.Width, tileDest.Height)
@@ -33,6 +35,13 @@ func SetWorldSpaceCollideables(currentMap *mapmodel.MapModel) []rl.Rectangle {
 		newObj := resolv.NewObject(float64(oX-oW), float64(oY-oH), float64(oW), float64(oH))
 		newObj.AddTags("env")
 		objects = append(objects, newObj)
+
+		if col == "@" {
+			fmt.Println("We actually created a \"nav\" collision")
+			newObj.RemoveTags("env")
+			newObj.AddTags("nav")
+			newObj.AddTags("doorId-2")
+		}
 
 	}
 

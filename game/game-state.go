@@ -1,6 +1,8 @@
 package game
 
-import rl "github.com/gen2brain/raylib-go/raylib"
+import (
+	rl "github.com/gen2brain/raylib-go/raylib"
+)
 
 var (
 	DebugMode bool
@@ -14,4 +16,5 @@ func Initialize(debugMode bool) {
 	rl.InitWindow(ScreenWidth, ScreenHeight, "Raylib Playground :)")
 	rl.SetExitKey(0)
 	rl.SetTargetFPS(60)
+
 }
