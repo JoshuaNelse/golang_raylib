@@ -11,21 +11,19 @@ import (
 )
 
 func ReadPlayerInputs() {
+	resetPlayer()
+
 	if rl.IsKeyDown(rl.KeyW) || rl.IsKeyDown(rl.KeyUp) {
-		MainPlayer.Moving = true
-		PlayerUp = true
+		MainPlayer.Moving.Up = true
 	}
 	if rl.IsKeyDown(rl.KeyS) || rl.IsKeyDown(rl.KeyDown) {
-		MainPlayer.Moving = true
-		PlayerDown = true
+		MainPlayer.Moving.Down = true
 	}
 	if rl.IsKeyDown(rl.KeyA) || rl.IsKeyDown(rl.KeyLeft) {
-		MainPlayer.Moving = true
-		PlayerLeft = true
+		MainPlayer.Moving.Left = true
 	}
 	if rl.IsKeyDown(rl.KeyD) || rl.IsKeyDown(rl.KeyRight) {
-		MainPlayer.Moving = true
-		PlayerRight = true
+		MainPlayer.Moving.Right = true
 	}
 	if rl.IsKeyPressed(rl.KeyQ) {
 		audio_engine.ToggleMusic()
@@ -57,4 +55,11 @@ func ReadPlayerInputs() {
 	} else if rl.IsKeyPressed(rl.KeySix) {
 		MainPlayer.EquipWeapon(staves.PizzaShooter())
 	}
+}
+
+func resetPlayer() {
+	MainPlayer.Moving.Up = false
+	MainPlayer.Moving.Down = false
+	MainPlayer.Moving.Left = false
+	MainPlayer.Moving.Right = false
 }

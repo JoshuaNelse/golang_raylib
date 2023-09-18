@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"raylib/playground/director-models/map-model"
-	"raylib/playground/engines/collision-engine"
+	"raylib/playground/engines/physics-engine"
 	"strconv"
 	"strings"
 
@@ -45,7 +45,7 @@ func LoadMap(mapFile string, texture rl.Texture2D) *map_model.MapModel {
 	spaceHeight := mapH * int(2*destTileDimension.Height)
 	spaceCellWidth := 1
 	spaceCellHeight := 1
-	collision_engine.WorldCollisionSpace = resolv.NewSpace(spaceWidth, spaceHeight, spaceCellWidth, spaceCellHeight)
+	physics_engine.WorldCollisionSpace = resolv.NewSpace(spaceWidth, spaceHeight, spaceCellWidth, spaceCellHeight)
 
 	var tileMap []int
 	var srcMap []string

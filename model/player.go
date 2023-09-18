@@ -16,13 +16,21 @@ type Test struct {
 	Sprite Sprite
 }
 
+type PlayerMovement struct {
+	Up    bool
+	Down  bool
+	Left  bool
+	Right bool
+}
+
 type Player struct {
 	Sprite         Sprite
 	SpriteFlipped  bool
 	Obj            *resolv.Object
 	Weapon         *Weapon
 	Hand           pointmodel.Point
-	Moving         bool
+	Moving         PlayerMovement
+	Speed          float32
 	Attacking      bool
 	AttackCooldown int
 }
@@ -47,7 +55,7 @@ func (p *Player) Draw(frameCount int32) {
 		p.Sprite.Frame = 0
 	}
 	var weaponOffset float32 = 0
-	if p.Moving {
+	if p.IsMoving() {
 		p.Sprite.Src.X = 192                                                                       // pixel where run animation starts
 		p.Sprite.Src.X += float32(p.Sprite.Frame) * float32(math.Abs(float64(p.Sprite.Src.Width))) // rolling the animation
 		weaponOffset = -4
@@ -63,7 +71,7 @@ func (p *Player) Draw(frameCount int32) {
 		p.Sprite.Src.X += float32(p.Sprite.Frame) * float32(math.Abs(float64(p.Sprite.Src.Width))) // rolling the animation
 	}
 	p.Weapon.SpriteFlipped = p.SpriteFlipped
-	p.Moving = false
+	// p.Moving = false
 	rl.DrawTexturePro(draw2d.Texture, p.Sprite.Src, p.Sprite.Dest, rl.NewVector2(p.Sprite.Dest.Width, p.Sprite.Dest.Height), 0, rl.White)
 	updateFrame := frameCount%8 == 0
 	p.Weapon.Draw(p.Sprite.Frame, updateFrame, weaponOffset)
@@ -124,4 +132,8 @@ func (p *Player) EquipWeapon(w *Weapon) {
 
 	// update player weapon
 	p.Weapon = w
+}
+
+func (p *Player) IsMoving() bool {
+	return p.Moving.Up || p.Moving.Down || p.Moving.Left || p.Moving.Right
 }

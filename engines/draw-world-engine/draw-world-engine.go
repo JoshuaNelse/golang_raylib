@@ -5,7 +5,7 @@ import (
 	"raylib/playground/director-models/draw-model"
 	"raylib/playground/director-models/map-model"
 	"raylib/playground/director-models/point-model"
-	"raylib/playground/engines/projectile-engine"
+	"raylib/playground/engines/physics-engine"
 	util "raylib/playground/game/utils"
 	"raylib/playground/model"
 	"raylib/playground/model/draw2d/texture-maps"
@@ -106,7 +106,7 @@ func DrawScene(debugMode bool) {
 	for _, e := range *enemies {
 		e.Draw(frameCount)
 	}
-	for _, p := range projectile_engine.Projectiles {
+	for _, p := range physics_engine.Projectiles {
 		p.Draw()
 	}
 	// drawing foreground after player so it appears "in-front"
@@ -121,7 +121,7 @@ func DrawScene(debugMode bool) {
 			rl.DrawRectangleLines(int32(mo.X), int32(mo.Y), int32(mo.W), int32(mo.H), rl.White)
 		}
 
-		for _, p := range projectile_engine.Projectiles {
+		for _, p := range physics_engine.Projectiles {
 			rl.DrawLine(int32(p.Start.X), int32(p.Start.Y), int32(p.End.X), int32(p.End.Y), rl.Pink)
 		}
 
@@ -162,6 +162,6 @@ func DrawUI(debugMode bool) {
 		angle := util.GetPlayerToMouseAngleDegrees()
 		rl.DrawText(fmt.Sprintf("mouse->player  {X: %v, Y:%v}", rise, run), 10, 70, 16, rl.White)
 		rl.DrawText(fmt.Sprintf("Atan(%v/%v) = %v degrees", rise, run, int(angle)), 250, 10, 16, rl.White)
-		rl.DrawText(fmt.Sprintf("Live Projectiles: %v", len(projectile_engine.Projectiles)), 250, 30, 16, rl.White)
+		rl.DrawText(fmt.Sprintf("Live Projectiles: %v", len(physics_engine.Projectiles)), 250, 30, 16, rl.White)
 	}
 }

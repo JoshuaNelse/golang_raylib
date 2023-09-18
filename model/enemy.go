@@ -4,7 +4,6 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/solarlune/resolv"
 	"math"
-	collisionengine "raylib/playground/engines/collision-engine"
 	"raylib/playground/model/draw2d"
 )
 
@@ -63,6 +62,4 @@ func (e *Enemy) Hurt() {
 func (e *Enemy) Die() {
 	e.DeathFrames = 32
 	e.Dead = true
-	// Really don't like calling an engine from struct. Need to find a better way
-	collisionengine.WorldCollisionSpace.Remove(e.Obj)
 }

@@ -19,13 +19,12 @@
 
 
 # IN PROGRESS
-- break out code into modules
 - Create new map
   - add navigation mechanism
 
 
-
 # DONE
+- break out code into modules
 - Setup Map level Collision detection
   - add third set to map file with collision mappings (for collideable spaces)
 - implmenent foreground logic for uppercase tiles

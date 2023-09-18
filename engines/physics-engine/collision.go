@@ -1,4 +1,4 @@
-package collision_engine
+package physics_engine
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 
 var WorldCollisionSpace *resolv.Space
 
-func SetWorldSpaceCollideables(currentMap *map_model.MapModel) []rl.Rectangle {
+func SetWorldSpaceCollidables(currentMap *map_model.MapModel) []rl.Rectangle {
 
 	tileDest := rl.Rectangle{
 		Height: currentMap.DestTileDimension.Height,

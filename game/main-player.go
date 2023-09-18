@@ -10,10 +10,6 @@ import (
 )
 
 var MainPlayer model.Player
-var PlayerUp = false
-var PlayerDown = false
-var PlayerLeft = false
-var PlayerRight = false
 
 func LoadMainPlayer() {
 	playerSprite := model.Sprite{
@@ -28,6 +24,7 @@ func LoadMainPlayer() {
 	MainPlayer = model.Player{
 		Sprite: playerSprite,
 		Obj:    playerObj,
+		Speed:  3,
 		Hand:   pointModel.Point{X: float32(playerObj.W) * .5, Y: float32(playerObj.H) * .94},
 	}
 
