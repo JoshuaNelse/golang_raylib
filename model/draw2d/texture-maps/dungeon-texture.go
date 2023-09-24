@@ -13,9 +13,10 @@ type CollisionOffset struct {
 	B float32
 }
 
+// GetTileCollisionOffset
 /*
-Right and Left offset have to consider each other
-Top and Bottom offset have to consider each other
+	Right and Left offset have to consider each other
+	Top and Bottom offset have to consider each other
 */
 func (c CollisionOffset) GetTileCollisionOffset(x, y, w, h float32) (float32, float32, float32, float32) {
 	offsetW := w*c.R - (w * (1 - c.L))
@@ -35,7 +36,7 @@ var (
 	}
 	CollisionTileOffsetMap = map[string]CollisionOffset{
 		"+": {1, 1, 1, 1},
-		".": {0, 0, 0, 0}, // probably more efficient to just skip writting a collision here
+		".": {0, 0, 0, 0}, // probably more efficient to just skip writing a collision here
 		"d": {L: .8, R: .8, T: .3, B: 1},
 		"@": {1, 1, 1, 1},
 	}
@@ -93,10 +94,10 @@ var (
 		9:  {X: 32, Y: 48},  // wall_banner_yellow 32 48 16 16
 		10: {X: 96, Y: 80},  // wall_column_top 96 80 16 16
 		11: {X: 96, Y: 96},  // wall_column_mid 96 96 16 16
-		12: {X: 96, Y: 112}, // wall_coulmn_base 96 112 16 16
+		12: {X: 96, Y: 112}, // wall_column_base 96 112 16 16
 		13: {X: 80, Y: 80},  // column_top 80 80 16 16
 		14: {X: 80, Y: 96},  // column_mid 80 96 16 16
-		15: {X: 80, Y: 112}, // coulmn_base 80 112 16 16
+		15: {X: 80, Y: 112}, // column_base 80 112 16 16
 	}
 	NavigationTileMap = map[int]pointmodel.Point{
 		1: {X: 304, Y: 288}, // chest_empty_open_anim 304 288 16 16 3

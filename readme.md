@@ -16,3 +16,9 @@
     - 4 honorary sword that shoots bows
 - pause/start music: q
 - turn debug mode on/off: 
+
+### Running the Map maker utility
+
+--- 
+Since making maps is a pain, I want to have a UI for making maps in an easy way. This is still a work-in-progress 
+- `go run map-maker.go`

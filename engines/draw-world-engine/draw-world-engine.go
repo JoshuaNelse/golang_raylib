@@ -68,7 +68,7 @@ func DrawMapBackground() []draw_model.DrawParams {
 			rl.DrawTexturePro(currentMap.Texture, fillTile, tileDest, rl.NewVector2(tileDest.Width, tileDest.Height), 0, rl.White)
 
 			// draw behind player if Y is "behind" player, but skip this with Walls
-			if tileDest.Y > player.Sprite.Dest.Y || strings.ToLower(currentMap.SrcMap[i]) == "w" {
+			if strings.ToLower(currentMap.SrcMap[i]) == "w" || player != nil && tileDest.Y > player.Sprite.Dest.Y {
 				foreGroundDrawParams = append(
 					foreGroundDrawParams,
 					draw_model.DrawParams{
@@ -102,9 +102,13 @@ func DrawScene(debugMode bool) {
 				The Player.Draw() could make sure that the wielded weapon
 				is drawn as well as the player itself.
 	*/
-	player.Draw(frameCount)
-	for _, e := range *enemies {
-		e.Draw(frameCount)
+	if player != nil {
+		player.Draw(frameCount)
+	}
+	if enemies != nil {
+		for _, e := range *enemies {
+			e.Draw(frameCount)
+		}
 	}
 	for _, p := range physics_engine.Projectiles {
 		p.Draw()
@@ -131,7 +135,6 @@ func DrawScene(debugMode bool) {
 
 		for _, e := range *enemies {
 			rl.DrawRectangleLines(int32(e.Obj.X), int32(e.Obj.Y), int32(e.Obj.W), int32(e.Obj.H), rl.White)
-
 		}
 
 		playerCenter := point_model.Point{
